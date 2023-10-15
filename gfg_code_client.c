@@ -21,8 +21,7 @@ void* clienthread(void* args)
     int network_socket;
  
     // Create a stream socket
-    network_socket = socket(AF_INET,
-                            SOCK_STREAM, 0);
+    network_socket = socket(AF_INET,SOCK_STREAM, 0);
  
     // Initialise port number and address
     struct sockaddr_in server_address;
@@ -31,9 +30,7 @@ void* clienthread(void* args)
     server_address.sin_port = htons(8989);
  
     // Initiate a socket connection
-    int connection_status = connect(network_socket,
-                                    (struct sockaddr*)&server_address,
-                                    sizeof(server_address));
+    int connection_status = connect(network_socket,(struct sockaddr*)&server_address,sizeof(server_address));
  
     // Check for connection error
     if (connection_status < 0) {
@@ -44,8 +41,7 @@ void* clienthread(void* args)
     printf("Connection established\n");
  
     // Send data to the socket
-    send(network_socket, &client_request,
-         sizeof(client_request), 0);
+    send(network_socket, &client_request,sizeof(client_request), 0);
  
     // Close the connection
     close(network_socket);
@@ -72,9 +68,7 @@ int main()
         int client_request = 1;
  
         // Create thread
-        pthread_create(&tid, NULL,
-                       clienthread,
-                       &client_request);
+        pthread_create(&tid, NULL,clienthread,&client_request);
         sleep(20);
         break;
     }
@@ -82,9 +76,7 @@ int main()
         int client_request = 2;
  
         // Create thread
-        pthread_create(&tid, NULL,
-                       clienthread,
-                       &client_request);
+        pthread_create(&tid, NULL,clienthread,&client_request);
         sleep(20);
         break;
     }
