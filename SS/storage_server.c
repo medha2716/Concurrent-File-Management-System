@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 
 
@@ -16,6 +17,64 @@ typedef struct send_nm_init{
     char ip[40];  
 }send_nm_init;
 
+void *nm_commands()
+{
+    char *ip = "127.0.0.1";
+    int port = 1235;
+
+    int ss_server_sock, nm_client_sock;
+    struct sockaddr_in ss_server_addr, nm_client_addr;
+    socklen_t addr_size;
+    char buffer[1024];
+    int n;
+
+    ss_server_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (ss_server_sock < 0){
+        perror("[-]TCP Socket (for receiving NM commands) creation error");
+        exit(1);
+    }
+    printf("[+]TCP server socket (for receiving NM commands) created.\n");
+
+    memset(&ss_server_addr, '\0', sizeof(ss_server_addr));
+    ss_server_addr.sin_family = AF_INET;
+    ss_server_addr.sin_port = port;
+    ss_server_addr.sin_addr.s_addr = inet_addr(ip);
+
+    n = bind(ss_server_sock, (struct sockaddr*)&ss_server_addr, sizeof(ss_server_addr));
+    if (n < 0){
+        perror("[-]Bind socket (for receiving NM commands) error");
+        exit(1);
+    }
+    printf("[+]Bind to the port number: %d (for receiving NM commands) \n", port);
+
+    listen(ss_server_sock, 5);
+    printf("Listening for NM server...\n");
+
+    while(1){
+        addr_size = sizeof(nm_client_addr);
+        nm_client_sock = accept(ss_server_sock, (struct sockaddr*)&nm_client_addr, &addr_size);
+        printf("[+]NM server connected.\n");
+
+        bzero(buffer, 1024);
+        recv(nm_client_sock, buffer, sizeof(buffer), 0);
+        printf("Client: %s\n", buffer);
+
+        bzero(buffer, 1024);
+        strcpy(buffer, "HI, THIS IS SERVER. HAVE A NICE DAY!!!");
+        printf("Server: %s\n", buffer);
+        send(nm_client_sock, buffer, strlen(buffer), 0);
+
+        close(nm_client_sock);
+        printf("[+]Client disconnected.\n\n");
+
+    }
+    return NULL;
+}
+
+void *client_interactions()
+{
+    return NULL;
+}
 
 
 int main() {
@@ -100,61 +159,18 @@ int main() {
     printf("Server: %s\n", buffer);
 
     close(sock);
-    printf("Disconnected from the server.\n");
+    printf("Disconnected from the NM server.\n");
 
     
+    pthread_t connection_for_nm_commands;
+    pthread_create(&connection_for_nm_commands,NULL,&nm_commands,NULL);
+
+    pthread_t connection_for_client_interactions;
+    pthread_create(&connection_for_client_interactions,NULL,&client_interactions,NULL);
 
 
-
-
-
-
-
-
-
-
-
-
-
-    // int serverPort = 12345;  // Set your desired port number
-    // int serverSocket;
-    // struct sockaddr_in serverAddr;
-
-    // // Create a socket
-    // serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    // if (serverSocket == -1) {
-    //     perror("Socket creation failed");
-    //     exit(1);
-    // }
-
-    // serverAddr.sin_family = AF_INET;
-    // serverAddr.sin_port = htons(serverPort);
-    // serverAddr.sin_addr.s_addr = INADDR_ANY;
-
-    // // Bind the socket to the address
-    // if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-    //     perror("Binding failed");
-    //     exit(1);
-    // }
-
-    // // Listen for incoming connections
-    // if (listen(serverSocket, 10) == 0) {
-    //     printf("Listening...\n");
-    // } else {
-    //     perror("Listening failed");
-    //     exit(1);
-    // }
-
-    // // Get the server's IP address and port number
-    // struct sockaddr_in myAddr;
-    // socklen_t addrLen = sizeof(myAddr);
-    // getsockname(serverSocket, (struct sockaddr*)&myAddr, &addrLen);
-
-    // printf("Storage server is running on IP: %s, Port: %d\n", inet_ntoa(myAddr.sin_addr), ntohs(myAddr.sin_port));
-
-    // // Handle incoming connections and data storage logic here
-
-    // close(serverSocket);
-    // return 0;
+    pthread_join(connection_for_nm_commands,NULL);
+    pthread_join(connection_for_client_interactions,NULL);
+    return 0;
 }
 
