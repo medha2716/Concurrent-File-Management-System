@@ -17,6 +17,13 @@ typedef struct send_nm_init{
     char ip[40];  
 }send_nm_init;
 
+//input enters: create file or directory, path to where it wants it to be created, and name of file/dir
+void create_file_dir(char* new_name,char* path,char file_or_dir)
+{
+    if(file_or_dir == 'd');
+    
+}
+
 void *nm_commands()
 {
     char *ip = "127.0.0.1";
