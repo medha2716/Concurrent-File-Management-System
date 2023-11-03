@@ -65,7 +65,7 @@ int main()
 
      while (1)
     {
-        int ss_sock;
+        int ss_sock; // have written ss_sock but could be a client!!!
         struct sockaddr_in ss_addr;
         socklen_t addr_size;
 
@@ -76,6 +76,8 @@ int main()
 
         int ss_or_client;
         recv(ss_sock, &ss_or_client, sizeof(ss_or_client), 0);
+
+
         if(ss_or_client == 1)
         {
             printf("[+]New Storage Server discovered.\n");
@@ -102,7 +104,17 @@ int main()
 
             close(ss_sock);
             printf("[+]SS disconnected.\n\n");
+
+            // store new ss data ... in such a way that search is easy
+            //Efficient Search: Optimize the search process employed by the Naming Server when serving client requests. Avoid linear searches and explore more efficient data structures such as Tries and Hashmaps to swiftly identify the correct Storage Server (SS) for a given request. This optimization enhances response times, especially in systems with a large number of files and folders.
+            // LRU Caching: Implement LRU (Least Recently Used) caching for recent searches. By caching recently accessed information, the NM can expedite subsequent requests for the same data, further improving response times and system efficiency. 
+
         }
+        else if(ss_or_client == 2) //it is a client
+        {
+            
+        }
+
     }
 
     
