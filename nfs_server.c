@@ -61,7 +61,7 @@ int main()
     // Listen on the socket,
     // with 100 max connection
     // requests queued
-    if (listen(server_sock, 100) == 0)
+    if (listen(server_sock, 80) == 0) // 30 ss, 50 clients?
         printf("Listening...\n");
     else
         printf("Listening Error\n");
@@ -83,6 +83,7 @@ int main()
 
         if(ss_or_client == 1)
         {
+            //for each storage server different thread?
             storage_servers_connected++;
 
             printf("[+]New Storage Server discovered.\n");
@@ -117,6 +118,7 @@ int main()
         }
         else if(ss_or_client == 2) //it is a client
         {
+            //for each client we have to have a different thread
             if(!storage_servers_connected)
                 continue;
                 //send to client that no storage servers are connected

@@ -8,9 +8,17 @@
 
 // ports reserved till 1024
 
+//keep track of files/folders in this server
+//for each file/dir have a lock
+//and while doing each command lock and unlock
+
+//also do what we did for peek at regular intervals to check if any files have been added to server and tell nm server
+
+//copy files/directories howww
+
 #define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
 
-#define MAX_CLIENTS 40
+#define MAX_CLIENTS 50
 
 typedef struct send_nm_init
 {
@@ -78,7 +86,7 @@ void *client_interactions()
     }
     printf("[+]Bind to the port number: %d (for client interaction) \n", port);
 
-    listen(ss_server_sock, 5);
+    listen(ss_server_sock, 50);
     printf("Listening for clients...\n\n\n");
 
     int i = 0;
