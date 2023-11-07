@@ -124,7 +124,7 @@ int main()
                 //send to client that no storage servers are connected
                 //disconnect client
 
-
+            
             //if create,delete
 
             // char *ip = "127.0.0.1";
@@ -164,7 +164,7 @@ int main()
             // printf("Disconnected from the server.\n");
 
         }
-
+    
     }
 
     
