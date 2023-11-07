@@ -86,7 +86,7 @@ int main()
             //for each storage server different thread?
             storage_servers_connected++;
 
-            printf("[+]New Storage Server discovered.\n");
+            printf("[+]New Storage Server discovered/Change discovered in already stored servers.\n");
 
             send_nm_init struct_received;
             int check = recv(ss_sock, &struct_received, sizeof(struct_received), 0);
