@@ -183,10 +183,14 @@ void *nm_commands()
             int l=create_dirs(buffer);
             break;
         case 'F': // for deletion of file
-
+            bzero(buffer,1024);
+            recv(nm_client_sock, buffer, sizeof(buffer), 0);
+            l=delete_file(buffer);
             break;
         case 'D': // for deletion of dir
-
+            bzero(buffer,1024);
+            recv(nm_client_sock, buffer, sizeof(buffer), 0);
+             l=delete_dir(buffer);
             break;
         case 'c': // sends its file/dir for copying
 

@@ -20,6 +20,9 @@ void get_accessible_path_present( char *relativePath);
 int create_file(char* relativePath);
 int create_dirs(char *relativePath);
 
+int delete_file(char *relativePath);
+int delete_dir(char *relativePath);
+
 #define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
 
 #define MAX_CLIENTS 50

@@ -83,6 +83,61 @@ void create_file_dir(int ss_port, char file_or_dir, char *path)
     printf("Disconnected from the storage server with port %d.\n",ss_port);
 }
 
+void delete_file_dir(int ss_port, char file_or_dir, char *path)
+{
+
+    char *ip = "127.0.0.1";
+    
+
+    int sock;
+    struct sockaddr_in addr;
+    char buffer[1024];
+    int n;
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0)
+    {
+        perror("[-]Socket error");
+        exit(1);
+    }
+    printf("[+]TCP server socket created to connect to SS with port number %d\n", ss_port);
+
+    memset(&addr, '\0', sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = ss_port;
+    addr.sin_addr.s_addr = inet_addr(ip);
+
+    connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+    printf("Connected to the storage server.\n");
+
+    bzero(buffer, 1024);
+    strcpy(buffer, "HELLO, THIS IS NM SERVER.");
+    printf("NM server: %s\n", buffer);
+    send(sock, buffer, strlen(buffer), 0);
+
+    bzero(buffer, 1024);
+    recv(sock, buffer, sizeof(buffer), 0);
+    printf("SS server: %s\n", buffer);
+
+    char c = file_or_dir;
+    send(sock, &c, sizeof(c), 0);
+
+    char ack_start[10];
+    recv(sock, ack_start, sizeof(ack_start), 0);
+    if (strcmp(ack_start, "START") == 0)
+        printf("START ack received\n");
+
+    send(sock, path, strlen(path), 0);
+
+    char ack_stop[10];
+    recv(sock, ack_stop, sizeof(ack_stop), 0);
+    if (strcmp(ack_stop, "STOP") == 0)
+        printf("STOP ack received\n");
+
+    close(sock);
+    printf("Disconnected from the storage server with port %d.\n",ss_port);
+}
+
 int main()
 {
     char buffer[1024];
@@ -173,13 +228,21 @@ int main()
             // for each client we have to have a different thread
             if (!storage_servers_connected)
                 continue;
+            
+            printf("\n");
 
             create_file_dir(1235, 'f', "dir1/dir3/file.txt"); // the last 2 arguments will be user input and sent from client to nm server; get port from the trie/hashmap
+            printf("\n");
+
             create_file_dir(1235, 'd', "dir1/dir2");
+            printf("\n");
 
-          
+            delete_file_dir(1235,'F', "main_dir/dir1/file.txt");
+            printf("\n");
 
-            // delete_file_dir();
+            delete_file_dir(1235,'D', "dir1/dir2");
+            printf("\n");
+
 
             // copy_file_dir();
         }

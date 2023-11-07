@@ -1,12 +1,12 @@
-#include "ss.h"
+#include "ss1.h"
 
  
-int main()
+int delete_dir(char *relativePath)
 {
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
 
-    const char *relativePath = "dir2/dir3/";
+    
 
     char fullPath[PATH_MAX];
     snprintf(fullPath, sizeof(fullPath), "%s/%s", cwd, relativePath);
