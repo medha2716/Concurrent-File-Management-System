@@ -28,6 +28,61 @@ socklen_t addr_size;
 
 int storage_servers_connected;
 
+void create_file_dir(int ss_port, char file_or_dir, char *path)
+{
+
+    char *ip = "127.0.0.1";
+    
+
+    int sock;
+    struct sockaddr_in addr;
+    char buffer[1024];
+    int n;
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0)
+    {
+        perror("[-]Socket error");
+        exit(1);
+    }
+    printf("[+]TCP server socket created to connect to SS with port number %d\n", ss_port);
+
+    memset(&addr, '\0', sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = ss_port;
+    addr.sin_addr.s_addr = inet_addr(ip);
+
+    connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+    printf("Connected to the storage server.\n");
+
+    bzero(buffer, 1024);
+    strcpy(buffer, "HELLO, THIS IS NM SERVER.");
+    printf("NM server: %s\n", buffer);
+    send(sock, buffer, strlen(buffer), 0);
+
+    bzero(buffer, 1024);
+    recv(sock, buffer, sizeof(buffer), 0);
+    printf("SS server: %s\n", buffer);
+
+    char c = file_or_dir;
+    send(sock, &c, sizeof(c), 0);
+
+    char ack_start[10];
+    recv(sock, ack_start, sizeof(ack_start), 0);
+    if (strcmp(ack_start, "START") == 0)
+        printf("START ack received\n");
+
+    send(sock, path, strlen(path), 0);
+
+    char ack_stop[10];
+    recv(sock, ack_stop, sizeof(ack_stop), 0);
+    if (strcmp(ack_stop, "STOP") == 0)
+        printf("STOP ack received\n");
+
+    close(sock);
+    printf("Disconnected from the storage server with port %d.\n",ss_port);
+}
+
 int main()
 {
     char buffer[1024];
@@ -35,7 +90,6 @@ int main()
     storage_servers_connected = 0;
 
     printf("Initializing Naming Server..\n\n");
-
 
     server_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (server_sock < 0)
@@ -66,7 +120,7 @@ int main()
     else
         printf("Listening Error\n");
 
-     while (1)
+    while (1)
     {
         int ss_sock; // have written ss_sock but could be a client!!!
         struct sockaddr_in ss_addr;
@@ -80,10 +134,9 @@ int main()
         int ss_or_client;
         recv(ss_sock, &ss_or_client, sizeof(ss_or_client), 0);
 
-
-        if(ss_or_client == 1)
+        if (ss_or_client == 1)
         {
-            //for each storage server different thread?
+            // for each storage server different thread?
             storage_servers_connected++;
 
             printf("[+]New Storage Server discovered/Change discovered in already stored servers.\n");
@@ -112,62 +165,25 @@ int main()
             printf("[+]SS disconnected.\n\n");
 
             // store new ss data ... in such a way that search is easy
-            //Efficient Search: Optimize the search process employed by the Naming Server when serving client requests. Avoid linear searches and explore more efficient data structures such as Tries and Hashmaps to swiftly identify the correct Storage Server (SS) for a given request. This optimization enhances response times, especially in systems with a large number of files and folders.
-            // LRU Caching: Implement LRU (Least Recently Used) caching for recent searches. By caching recently accessed information, the NM can expedite subsequent requests for the same data, further improving response times and system efficiency. 
-
+            // Efficient Search: Optimize the search process employed by the Naming Server when serving client requests. Avoid linear searches and explore more efficient data structures such as Tries and Hashmaps to swiftly identify the correct Storage Server (SS) for a given request. This optimization enhances response times, especially in systems with a large number of files and folders.
+            // LRU Caching: Implement LRU (Least Recently Used) caching for recent searches. By caching recently accessed information, the NM can expedite subsequent requests for the same data, further improving response times and system efficiency.
         }
-        else if(ss_or_client == 2) //it is a client
+        else if (ss_or_client == 2) // it is a client
         {
-            //for each client we have to have a different thread
-            if(!storage_servers_connected)
+            // for each client we have to have a different thread
+            if (!storage_servers_connected)
                 continue;
-                //send to client that no storage servers are connected
-                //disconnect client
 
-            
-            //if create,delete
+            create_file_dir(1235, 'f', "dir1/dir3/file.txt"); // the last 2 arguments will be user input and sent from client to nm server; get port from the trie/hashmap
+            create_file_dir(1235, 'd', "dir1/dir2");
 
-            // char *ip = "127.0.0.1";
-            // int port = 1235; //depends on ss which has that path
+          
 
-            // int sock;
-            // struct sockaddr_in addr;
-            // socklen_t addr_size;
-            // char buffer[1024];
-            // int n;
+            // delete_file_dir();
 
-            // sock = socket(AF_INET, SOCK_STREAM, 0);
-            // if (sock < 0){
-            //     perror("[-]Socket error");
-            //     exit(1);
-            // }
-            // printf("[+]TCP server socket created.\n");
-
-            // memset(&addr, '\0', sizeof(addr));
-            // addr.sin_family = AF_INET;
-            // addr.sin_port = port;
-            // addr.sin_addr.s_addr = inet_addr(ip);
-
-            // connect(sock, (struct sockaddr*)&addr, sizeof(addr));
-            // printf("Connected to the server.\n");
-
-            // bzero(buffer, 1024);
-            // strcpy(buffer, "HELLO, THIS IS CLIENT.");
-            // printf("Client: %s\n", buffer);
-            // send(sock, buffer, strlen(buffer), 0);
-
-            // bzero(buffer, 1024);
-            // recv(sock, buffer, sizeof(buffer), 0);
-            // printf("Server: %s\n", buffer);
-
-            // close(sock);
-            // printf("Disconnected from the server.\n");
-
+            // copy_file_dir();
         }
-    
     }
-
-    
 
     return 0;
 }

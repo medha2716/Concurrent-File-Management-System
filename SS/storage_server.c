@@ -1,5 +1,5 @@
 
-#include "ss.h"
+
 
 // ports reserved till 1024
 
@@ -8,11 +8,7 @@
 // and while doing each command lock and unlock
 
 // also do what we did for peek at regular intervals to check if any files have been added to server and tell nm server
-
-#define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
-
-#define MAX_CLIENTS 50
-
+#include "ss1.h"
 
 
 char HOME[1024];
@@ -30,11 +26,11 @@ send_nm_init struct_to_send;
 pthread_t client_thread[MAX_CLIENTS];
 
 // input enters: create file or directory, path to where it wants it to be created, and name of file/dir
-void create_file_dir(char *new_name, char *path, char file_or_dir)
-{
-    if (file_or_dir == 'd')
-        ;
-}
+// void create_file_dir(char *new_name, char *path, char file_or_dir)
+// {
+//     if (file_or_dir == 'd')
+//         ;
+// }
 
 void *client_handle(void *param)
 {
@@ -160,12 +156,53 @@ void *nm_commands()
 
         bzero(buffer, 1024);
         recv(nm_client_sock, buffer, sizeof(buffer), 0);
-        printf("Client: %s\n", buffer);
+        printf("NM server: %s\n", buffer);
 
         bzero(buffer, 1024);
-        strcpy(buffer, "HI, THIS IS SERVER. HAVE A NICE DAY!!!");
-        printf("Server: %s\n", buffer);
+        strcpy(buffer, "HI, THIS IS STORAGE SERVER!");
+        printf("SS server: %s\n", buffer);
         send(nm_client_sock, buffer, strlen(buffer), 0);
+
+        char choice;
+        recv(nm_client_sock,&choice,sizeof(choice),0);
+
+        char* ack_start="START";
+        printf("START ack sent\n");
+        send(nm_client_sock,ack_start,strlen(ack_start),0);
+
+        switch (choice)
+        {
+        case 'f': // for creation of file
+            bzero(buffer,1024);
+            recv(nm_client_sock, buffer, sizeof(buffer), 0);
+            int h=create_file(buffer);
+            break; 
+        case 'd': // for creation of dir
+            bzero(buffer,1024);
+            recv(nm_client_sock, buffer, sizeof(buffer), 0);
+            int l=create_dirs(buffer);
+            break;
+        case 'F': // for deletion of file
+
+            break;
+        case 'D': // for deletion of dir
+
+            break;
+        case 'c': // sends its file/dir for copying
+
+            break;
+        case 'p': // for server that copies file/dir
+
+            break;
+        default:
+            // (when choice is none of the above)
+
+            break;
+        }
+
+        char* ack_stop="STOP";
+        printf("STOP ack sent\n");
+        send(nm_client_sock,ack_stop,strlen(ack_stop),0);
 
         close(nm_client_sock);
         printf("[+]Client disconnected.\n\n");
@@ -394,15 +431,15 @@ int main()
     pthread_t connection_for_nm_commands;
     pthread_create(&connection_for_nm_commands, NULL, &nm_commands, NULL);
 
-    pthread_t connection_for_client_interactions;
-    pthread_create(&connection_for_client_interactions, NULL, &client_interactions, NULL);
+    // pthread_t connection_for_client_interactions;
+    // pthread_create(&connection_for_client_interactions, NULL, &client_interactions, NULL);
 
-    pthread_t update_file_dir;
-    pthread_create(&update_file_dir, NULL, &update_file_structure_nm, NULL);
+    // pthread_t update_file_dir;
+    // pthread_create(&update_file_dir, NULL, &update_file_structure_nm, NULL);
 
     pthread_join(connection_for_nm_commands, NULL);
-    pthread_join(connection_for_client_interactions, NULL);
-    pthread_join(update_file_dir,NULL);
+    // pthread_join(connection_for_client_interactions, NULL);
+    // pthread_join(update_file_dir,NULL);
 
     return 0;
 }

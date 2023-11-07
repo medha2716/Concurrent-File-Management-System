@@ -1,6 +1,6 @@
-#include "ss.h"
+#include "ss1.h"
 
-int directoryExists(const char *path)
+int directoryExists(char *path)
 {
     DIR *dir = opendir(path);
 
@@ -15,7 +15,7 @@ int directoryExists(const char *path)
     }
 }
 
-void get_accessible_path_present(const char *relativePath)
+void get_accessible_path_present(char *relativePath)
 {
 
     char base_path[PATH_MAX];
@@ -52,12 +52,12 @@ void get_accessible_path_present(const char *relativePath)
     printf("%s\n", base_path);
 }
 
-int main()
+int create_dirs( char *relativePath)
 {
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
 
-    const char *relativePath = "dir1/dir3";
+ 
     get_accessible_path_present(relativePath);
 
     char fullPath[PATH_MAX]; 

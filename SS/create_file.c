@@ -1,12 +1,11 @@
 
-#include "ss.h"
+#include "ss1.h"
 
-int main()
+int create_file(char* relativePath)
 {
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
 
-    const char *relativePath = "dir1/dir3/file.txt";
 
     char fullPath[PATH_MAX];
     snprintf(fullPath, sizeof(fullPath), "%s/%s", cwd, relativePath);
