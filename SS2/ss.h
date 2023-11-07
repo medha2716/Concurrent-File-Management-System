@@ -10,9 +10,5 @@
 #include <pthread.h>
 #include <sys/types.h>
 
-
-
 #define PATH_MAX 1024
 
-int directoryExists(const char *path);
-void get_accessible_path_present(const char *relativePath);
