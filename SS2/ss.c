@@ -109,8 +109,49 @@ void *client_handle(void *param)
 
     bzero(buffer, 1024);
     strcpy(buffer, "HI, THIS IS SERVER. HAVE A NICE DAY!!!");
-    printf("Server: %s\n", buffer);
+    printf("Storage Server: %s\n", buffer);
     send(*client_sock, buffer, strlen(buffer), 0);
+
+    char choice;
+    recv(*client_sock, &choice, sizeof(choice), 0);
+
+    char *ack_start = "START";
+    printf("START ack sent\n");
+    send(*client_sock, ack_start, strlen(ack_start), 0);
+
+    int flag_success = 1;
+
+    int ack;
+    char result[4096];
+
+    switch (choice)
+    {
+    case 'f':
+        bzero(buffer, 1024);
+        recv(*client_sock, buffer, sizeof(buffer), 0);
+        strcpy(result,file_details(buffer));
+        send(*client_sock,result,sizeof(result),0);
+        recv(*client_sock, &ack, sizeof(ack), 0);
+        printf("Received ack\n");
+        break;
+    default:
+        printf("Unsure what client wants to do\n");
+        break;
+    }
+
+    if (flag_success)
+    {
+        char *ack_stop = "STOP";
+        printf("STOP ack sent\n");
+        send(*client_sock, ack_stop, strlen(ack_stop), 0);
+    }
+    else
+    {
+        char *ack_stop = "ERROR_STP";
+        printf("ERROR_STP ack sent\n");
+        send(*client_sock, ack_stop, strlen(ack_stop), 0);
+    }
+
     close(*client_sock);
     printf("[+]Client disconnected.\n\n");
     return NULL;
