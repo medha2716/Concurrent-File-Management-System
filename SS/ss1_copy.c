@@ -1,4 +1,4 @@
-#include "ss.h"
+#include "ss1.h"
 
 char *ip = "127.0.0.1";
 int port = 2344;
@@ -116,40 +116,10 @@ void copyDirectory(const char *srcPath, const char *destPath)
     usleep(10);
 }
 
-int main()
+int ss1_copy(int sock)
 {
 
-    server_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_sock < 0)
-    {
-        perror("[-]Socket error");
-        exit(1);
-    }
-    printf("[+]TCP server socket created.\n");
-
-    memset(&server_addr, '\0', sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = port;
-    server_addr.sin_addr.s_addr = inet_addr(ip);
-
-    n = bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    if (n < 0)
-    {
-        perror("[-]Bind error");
-        exit(1);
-    }
-    printf("[+]Bind to the port number: %d\n", port);
-
-    listen(server_sock, 5);
-    printf("Listening...\n");
-
-    while (1)
-    {
-
-        addr_size = sizeof(client_addr);
-        client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &addr_size);
-        printf("[+]NM connected.\n");
-
+        client_sock=sock;
         char srcPath[PATH_MAX];
         char destPath[PATH_MAX];
 
@@ -162,6 +132,7 @@ int main()
         send(client_sock, &ack, sizeof(ack), 0);
 
         struct stat srcStat;
+        printf("%s\n",srcPath);
         if (stat(srcPath, &srcStat) == -1)
         {
             perror("Failed to get source file/directory information");
@@ -191,6 +162,6 @@ int main()
         printf("Disconnected from the server.\n");
 
         printf("Copy completed.\n");
-    }
+  
     return 0;
 }

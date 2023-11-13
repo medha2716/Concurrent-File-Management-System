@@ -23,6 +23,8 @@ int create_dirs(char *relativePath);
 int delete_file(char *relativePath);
 int delete_dir(char *relativePath);
 
+int ss1_copy(int sock);
+
 #define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
 
 #define MAX_CLIENTS 50

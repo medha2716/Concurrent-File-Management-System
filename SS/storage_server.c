@@ -1,6 +1,5 @@
 
 
-
 // ports reserved till 1024
 
 // keep track of files/folders in this server
@@ -9,7 +8,6 @@
 
 // also do what we did for peek at regular intervals to check if any files have been added to server and tell nm server
 #include "ss1.h"
-
 
 char HOME[1024];
 
@@ -164,49 +162,61 @@ void *nm_commands()
         send(nm_client_sock, buffer, strlen(buffer), 0);
 
         char choice;
-        recv(nm_client_sock,&choice,sizeof(choice),0);
+        recv(nm_client_sock, &choice, sizeof(choice), 0);
 
-        char* ack_start="START";
+        char *ack_start = "START";
         printf("START ack sent\n");
-        send(nm_client_sock,ack_start,strlen(ack_start),0);
+        send(nm_client_sock, ack_start, strlen(ack_start), 0);
+
+        int flag_success = 1;
 
         switch (choice)
         {
         case 'f': // for creation of file
-            bzero(buffer,1024);
+            bzero(buffer, 1024);
             recv(nm_client_sock, buffer, sizeof(buffer), 0);
-            int h=create_file(buffer);
-            break; 
+            int h = create_file(buffer);
+            break;
         case 'd': // for creation of dir
-            bzero(buffer,1024);
+            bzero(buffer, 1024);
             recv(nm_client_sock, buffer, sizeof(buffer), 0);
-            int l=create_dirs(buffer);
+            int l = create_dirs(buffer);
             break;
         case 'F': // for deletion of file
-            bzero(buffer,1024);
+            bzero(buffer, 1024);
             recv(nm_client_sock, buffer, sizeof(buffer), 0);
-            l=delete_file(buffer);
+            l = delete_file(buffer);
             break;
         case 'D': // for deletion of dir
-            bzero(buffer,1024);
+            bzero(buffer, 1024);
             recv(nm_client_sock, buffer, sizeof(buffer), 0);
-             l=delete_dir(buffer);
+            l = delete_dir(buffer);
             break;
         case 'c': // sends its file/dir for copying
 
             break;
         case 'p': // for server that copies file/dir
-
+            ss1_copy(nm_client_sock);
             break;
         default:
             // (when choice is none of the above)
-
+            flag_success = 0;
+            printf("Unsure what the NM server wants to do\n");
             break;
         }
 
-        char* ack_stop="STOP";
-        printf("STOP ack sent\n");
-        send(nm_client_sock,ack_stop,strlen(ack_stop),0);
+        if (flag_success)
+        {
+            char *ack_stop = "STOP";
+            printf("STOP ack sent\n");
+            send(nm_client_sock, ack_stop, strlen(ack_stop), 0);
+        }
+        else
+        {
+            char *ack_stop = "ERROR_STP";
+            printf("ERROR_STP ack sent\n");
+            send(nm_client_sock, ack_stop, strlen(ack_stop), 0);
+        }
 
         close(nm_client_sock);
         printf("[+]Client disconnected.\n\n");
@@ -214,7 +224,7 @@ void *nm_commands()
     return NULL;
 }
 
-void search_directory(const char *dir_path,char* temp_to_store_curr_paths)
+void search_directory(const char *dir_path, char *temp_to_store_curr_paths)
 {
 
     DIR *dir = opendir(dir_path);
@@ -226,8 +236,8 @@ void search_directory(const char *dir_path,char* temp_to_store_curr_paths)
     }
 
     struct dirent *entry;
-    
-    int c=0;
+
+    int c = 0;
     while ((entry = readdir(dir)) != NULL)
     {
         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
@@ -247,32 +257,32 @@ void search_directory(const char *dir_path,char* temp_to_store_curr_paths)
 
         if (S_ISDIR(entry_stat.st_mode))
         {
-            search_directory(full_path,temp_to_store_curr_paths);
+            search_directory(full_path, temp_to_store_curr_paths);
         }
         else
         {
-            int target = strlen(HOME)+1;
+            int target = strlen(HOME) + 1;
             char access_path_sent[PATH_MAX];
-            snprintf(access_path_sent,sizeof(access_path_sent),"%s\n", full_path + target);
+            snprintf(access_path_sent, sizeof(access_path_sent), "%s\n", full_path + target);
 
             const char *ext = strrchr(entry->d_name, '.');
-            if((ext && strcmp(ext, ".c") == 0) || (ext && strcmp(ext, ".h") == 0))
+            if ((ext && strcmp(ext, ".c") == 0) || (ext && strcmp(ext, ".h") == 0))
                 continue;
-            else if(( entry->d_name[0]!='.')) //hidden
+            else if ((entry->d_name[0] != '.')) // hidden
             {
                 // printf("%s",access_path_sent);
-                strcat(temp_to_store_curr_paths,access_path_sent);
+                strcat(temp_to_store_curr_paths, access_path_sent);
                 c++;
-            }   
+            }
         }
     }
 
-    if(c == 0) //empty directories
+    if (c == 0) // empty directories
     {
-        int target = strlen(HOME)+1;
+        int target = strlen(HOME) + 1;
         char access_path_sent[PATH_MAX];
-        snprintf(access_path_sent,sizeof(access_path_sent),"%s\n", dir_path + target);
-        strcat(temp_to_store_curr_paths,access_path_sent);
+        snprintf(access_path_sent, sizeof(access_path_sent), "%s\n", dir_path + target);
+        strcat(temp_to_store_curr_paths, access_path_sent);
     }
 
     closedir(dir);
@@ -280,77 +290,73 @@ void search_directory(const char *dir_path,char* temp_to_store_curr_paths)
 
 void *update_file_structure_nm()
 {
-    
-    getcwd(HOME,1024);
 
-    while(1)
+    getcwd(HOME, 1024);
+
+    while (1)
     {
-    char temp_to_store_current_paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
-    
-    search_directory(HOME,temp_to_store_current_paths);
+        char temp_to_store_current_paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
 
-    printf("%s\n",temp_to_store_current_paths);
+        search_directory(HOME, temp_to_store_current_paths);
 
-    if(strcmp(struct_to_send.accessible_paths,temp_to_store_current_paths)!=0)
-    {
-        printf("Change in File structure detected!\n");
+        printf("%s\n", temp_to_store_current_paths);
 
-        char *ip = "127.0.0.1";
-        int port = 5566;
-
-        int sock;
-        struct sockaddr_in addr;
-        socklen_t addr_size;
-        char buffer[1024];
-        int n;
-
-        sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (sock < 0)
+        if (strcmp(struct_to_send.accessible_paths, temp_to_store_current_paths) != 0)
         {
-            perror("[-]Socket error");
-            exit(1);
-        }
-        printf("[+]TCP server socket created for connecting to Naming Server..\n");
+            printf("Change in File structure detected!\n");
 
-        memset(&addr, '\0', sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_port = port;
-        addr.sin_addr.s_addr = inet_addr(ip);
+            char *ip = "127.0.0.1";
+            int port = 5566;
 
-        connect(sock, (struct sockaddr *)&addr, sizeof(addr));
-        printf("Connected to the NM server.\n");
+            int sock;
+            struct sockaddr_in addr;
+            socklen_t addr_size;
+            char buffer[1024];
+            int n;
 
+            sock = socket(AF_INET, SOCK_STREAM, 0);
+            if (sock < 0)
+            {
+                perror("[-]Socket error");
+                exit(1);
+            }
+            printf("[+]TCP server socket created for connecting to Naming Server..\n");
+
+            memset(&addr, '\0', sizeof(addr));
+            addr.sin_family = AF_INET;
+            addr.sin_port = port;
+            addr.sin_addr.s_addr = inet_addr(ip);
+
+            connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+            printf("Connected to the NM server.\n");
 
             // send to nfs server that it is a storage server that wants to update its file structure
-        int ss_or_client = 1; 
-        send(sock, &ss_or_client, sizeof(ss_or_client), 0);
+            int ss_or_client = 1;
+            send(sock, &ss_or_client, sizeof(ss_or_client), 0);
 
-        strcpy(struct_to_send.accessible_paths, temp_to_store_current_paths);
+            strcpy(struct_to_send.accessible_paths, temp_to_store_current_paths);
 
-        send(sock, &struct_to_send, sizeof(struct_to_send), 0);
+            send(sock, &struct_to_send, sizeof(struct_to_send), 0);
 
-        bzero(buffer, 1024);
-        recv(sock, buffer, sizeof(buffer), 0);
-        printf("Server: %s\n", buffer);
+            bzero(buffer, 1024);
+            recv(sock, buffer, sizeof(buffer), 0);
+            printf("Server: %s\n", buffer);
 
-        close(sock);
-        printf("Disconnected from the NM server.\n");
-
+            close(sock);
+            printf("Disconnected from the NM server.\n");
+        }
+        bzero(temp_to_store_current_paths, MAX_LENGTH_ACC_PATHS_ONE_SS);
+        sleep(20);
     }
-    bzero(temp_to_store_current_paths, MAX_LENGTH_ACC_PATHS_ONE_SS);
-    sleep(20);
-    }
-
 }
 
 int main()
 {
-    
+
     printf("Initializing Storage Server\n");
 
     // taking input of accessible paths
     char accessible_paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
-    
 
     printf("Enter (line separated) accessible paths for this stoarage server:\n");
     char temp[MAX_LENGTH_ACC_PATHS_ONE_SS];
@@ -416,8 +422,6 @@ int main()
     int ss_or_client = 1;
     send(sock, &ss_or_client, sizeof(ss_or_client), 0);
 
-    
-
     strcpy(struct_to_send.accessible_paths, accessible_paths);
     strcpy(struct_to_send.ip, ip);
     struct_to_send.port_client = 1234; // HOW TO GIVE DIFF PORTS TO EACH SS???
@@ -443,7 +447,7 @@ int main()
 
     pthread_join(connection_for_nm_commands, NULL);
     // pthread_join(connection_for_client_interactions, NULL);
-    // pthread_join(update_file_dir,NULL);
+    // pthread_join(update_file_dir, NULL);
 
     return 0;
 }
