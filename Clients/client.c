@@ -57,6 +57,16 @@ int main()
 
     send(sock, path, strlen(path), 0);
 
+    char result[4096];
+    bzero(result,4096);
+    recv(sock,result,sizeof(result),0);
+
+    printf("%s\n",result);
+
+    int ack = 1;
+    send(sock, &ack, sizeof(ack), 0);
+    printf("Sent ack\n");
+    
     char ack_stop[10];
     recv(sock, ack_stop, sizeof(ack_stop), 0);
     if (strcmp(ack_stop, "STOP") == 0)

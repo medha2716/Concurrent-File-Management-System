@@ -22,6 +22,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <errno.h>
 
 char *getFormattedFileInfo(const struct stat *file_stat, struct passwd *owner, struct group *group)
 {
@@ -51,13 +52,14 @@ char *getFormattedFileInfo(const struct stat *file_stat, struct passwd *owner, s
     return info_str;
 }
 
-int file_details(char *filename)
+char *file_details(char *filename)
 {
     // const char *filename = "dir1/";  // Replace with the path to your file
 
     struct stat file_info;
     struct passwd *owner;
     struct group *group;
+    char result[4096];
 
     // Use the stat function to get information about the file
     if (stat(filename, &file_info) == 0)
@@ -65,13 +67,16 @@ int file_details(char *filename)
         owner = getpwuid(file_info.st_uid); // Get owner's name
         group = getgrgid(file_info.st_gid); // Get group's name
 
-        printf("File Info: %s\n", getFormattedFileInfo(&file_info, owner, group));
+        snprintf(result, sizeof(result), "File Info: %s\n", getFormattedFileInfo(&file_info, owner, group));
+        printf("%s\n",result);
     }
     else
     {
         perror("stat");
-        return 1; // Exit with an error code
+        strncpy(result, strerror(errno), sizeof(result) - 1);
+        result[sizeof(result) - 1] = '\0';
+        printf("%s\n",result);
     }
 
-    return 0;
+    return result;
 }

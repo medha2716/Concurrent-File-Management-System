@@ -122,13 +122,17 @@ void *client_handle(void *param)
     int flag_success = 1;
 
     int ack;
+    char result[4096];
 
     switch (choice)
     {
     case 'f':
         bzero(buffer, 1024);
         recv(*client_sock, buffer, sizeof(buffer), 0);
-        file_details(buffer);
+        strcpy(result,file_details(buffer));
+        send(*client_sock,result,sizeof(result),0);
+        recv(*client_sock, &ack, sizeof(ack), 0);
+        printf("Received ack\n");
         break;
     default:
         printf("Unsure what client wants to do\n");
