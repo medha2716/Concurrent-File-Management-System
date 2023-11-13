@@ -29,6 +29,8 @@ void copy_ss2(int client_sock);
 
 int self_copy(char *srcPath, char *destPath);
 
+int file_details(char *filename);
+
 #define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
 
 #define MAX_CLIENTS 50

@@ -109,8 +109,45 @@ void *client_handle(void *param)
 
     bzero(buffer, 1024);
     strcpy(buffer, "HI, THIS IS SERVER. HAVE A NICE DAY!!!");
-    printf("Server: %s\n", buffer);
+    printf("Storage Server: %s\n", buffer);
     send(*client_sock, buffer, strlen(buffer), 0);
+
+    char choice;
+    recv(*client_sock, &choice, sizeof(choice), 0);
+
+    char *ack_start = "START";
+    printf("START ack sent\n");
+    send(*client_sock, ack_start, strlen(ack_start), 0);
+
+    int flag_success = 1;
+
+    int ack;
+
+    switch (choice)
+    {
+    case 'f':
+        bzero(buffer, 1024);
+        recv(*client_sock, buffer, sizeof(buffer), 0);
+        file_details(buffer);
+        break;
+    default:
+        printf("Unsure what client wants to do\n");
+        break;
+    }
+
+    if (flag_success)
+    {
+        char *ack_stop = "STOP";
+        printf("STOP ack sent\n");
+        send(*client_sock, ack_stop, strlen(ack_stop), 0);
+    }
+    else
+    {
+        char *ack_stop = "ERROR_STP";
+        printf("ERROR_STP ack sent\n");
+        send(*client_sock, ack_stop, strlen(ack_stop), 0);
+    }
+
     close(*client_sock);
     printf("[+]Client disconnected.\n\n");
     return NULL;
@@ -271,8 +308,8 @@ void *nm_commands()
         case 'p': // for server that copies file/dir
             ss1_copy(nm_client_sock);
             break;
-        case 's': //copy from self
-            
+        case 's': // copy from self
+
             recv(nm_client_sock, srcPath, sizeof(srcPath), 0);
             ack = 1;
             send(nm_client_sock, &ack, sizeof(ack), 0);
@@ -280,7 +317,7 @@ void *nm_commands()
             recv(nm_client_sock, destPath, sizeof(destPath), 0);
             ack = 1;
             send(nm_client_sock, &ack, sizeof(ack), 0);
-            self_copy(srcPath,destPath);
+            self_copy(srcPath, destPath);
             break;
         default:
             // (when choice is none of the above)
@@ -520,17 +557,17 @@ int main()
     close(sock);
     printf("Disconnected from the NM server.\n");
 
-    pthread_t connection_for_nm_commands;
-    pthread_create(&connection_for_nm_commands, NULL, &nm_commands, NULL);
+    // pthread_t connection_for_nm_commands;
+    // pthread_create(&connection_for_nm_commands, NULL, &nm_commands, NULL);
 
-    // pthread_t connection_for_client_interactions;
-    // pthread_create(&connection_for_client_interactions, NULL, &client_interactions, NULL);
+    pthread_t connection_for_client_interactions;
+    pthread_create(&connection_for_client_interactions, NULL, &client_interactions, NULL);
 
     // pthread_t update_file_dir;
     // pthread_create(&update_file_dir, NULL, &update_file_structure_nm, NULL);
 
-    pthread_join(connection_for_nm_commands, NULL);
-    // pthread_join(connection_for_client_interactions, NULL);
+    // pthread_join(connection_for_nm_commands, NULL);
+    pthread_join(connection_for_client_interactions, NULL);
     // pthread_join(update_file_dir, NULL);
 
     return 0;
