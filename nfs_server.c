@@ -32,7 +32,6 @@ void create_file_dir(int ss_port, char file_or_dir, char *path)
 {
 
     char *ip = "127.0.0.1";
-    
 
     int sock;
     struct sockaddr_in addr;
@@ -80,14 +79,13 @@ void create_file_dir(int ss_port, char file_or_dir, char *path)
         printf("STOP ack received\n");
 
     close(sock);
-    printf("Disconnected from the storage server with port %d.\n",ss_port);
+    printf("Disconnected from the storage server with port %d.\n", ss_port);
 }
 
 void delete_file_dir(int ss_port, char file_or_dir, char *path)
 {
 
     char *ip = "127.0.0.1";
-    
 
     int sock;
     struct sockaddr_in addr;
@@ -135,9 +133,8 @@ void delete_file_dir(int ss_port, char file_or_dir, char *path)
         printf("STOP ack received\n");
 
     close(sock);
-    printf("Disconnected from the storage server with port %d.\n",ss_port);
+    printf("Disconnected from the storage server with port %d.\n", ss_port);
 }
-
 
 void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
 {
@@ -179,7 +176,6 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     int sock2;
     struct sockaddr_in addr2;
 
-  
     sock2 = socket(AF_INET, SOCK_STREAM, 0);
     if (sock2 < 0)
     {
@@ -196,8 +192,6 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     connect(sock2, (struct sockaddr *)&addr2, sizeof(addr2));
     printf("Connected to the storage server 2.\n");
 
-
-
     bzero(buffer, 1024);
     strcpy(buffer, "HELLO, THIS IS NM SERVER.");
     printf("NM server: %s\n", buffer);
@@ -207,7 +201,6 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     recv(sock1, buffer, sizeof(buffer), 0);
     printf("SS server: %s\n", buffer);
 
-
     char c = 'p';
     send(sock1, &c, sizeof(c), 0);
 
@@ -215,7 +208,6 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     recv(sock1, ack_start, sizeof(ack_start), 0);
     if (strcmp(ack_start, "START") == 0)
         printf("START ack received\n");
-
 
     bzero(buffer, 1024);
     strcpy(buffer, "HELLO, THIS IS NM SERVER.");
@@ -226,11 +218,9 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     recv(sock2, buffer, sizeof(buffer), 0);
     printf("SS server: %s\n", buffer);
 
-
     c = 'c';
     send(sock2, &c, sizeof(c), 0);
 
-   
     recv(sock2, ack_start, sizeof(ack_start), 0);
     if (strcmp(ack_start, "START") == 0)
         printf("START ack received\n");
@@ -238,13 +228,13 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     // start
     bzero(buffer, 1024);
     strcpy(buffer, srcPath);
-    printf("Sent: %s\n",buffer);
+    printf("Sent: %s\n", buffer);
     send(sock1, &buffer, sizeof(buffer), 0);
     recv(sock1, &ack, sizeof(ack), 0);
 
     bzero(buffer, 1024);
     strcpy(buffer, destPath);
-    printf("Sent: %s\n",buffer);
+    printf("Sent: %s\n", buffer);
     send(sock1, &buffer, sizeof(buffer), 0);
     recv(sock1, &ack, sizeof(ack), 0);
 
@@ -308,16 +298,77 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     recv(sock1, ack_stop, sizeof(ack_stop), 0);
     if (strcmp(ack_stop, "STOP") == 0)
         printf("STOP ack received\n");
-    
-    
+
     recv(sock2, ack_stop, sizeof(ack_stop), 0);
     if (strcmp(ack_stop, "STOP") == 0)
         printf("STOP ack received\n");
 
     close(sock1);
     close(sock2);
+}
 
+void copy_file_dir_nm_self(int ss_port, char *srcPath, char *destPath)
+{
+    char *ip = "127.0.0.1";
 
+    int sock;
+    struct sockaddr_in addr;
+    char buffer[1024];
+    int n;
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0)
+    {
+        perror("[-]Socket error");
+        exit(1);
+    }
+    printf("[+]TCP server socket created to connect to SS with port number %d\n", ss_port);
+
+    memset(&addr, '\0', sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = ss_port;
+    addr.sin_addr.s_addr = inet_addr(ip);
+
+    connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+    printf("Connected to the storage server.\n");
+
+    bzero(buffer, 1024);
+    strcpy(buffer, "HELLO, THIS IS NM SERVER.");
+    printf("NM server: %s\n", buffer);
+    send(sock, buffer, strlen(buffer), 0);
+
+    bzero(buffer, 1024);
+    recv(sock, buffer, sizeof(buffer), 0);
+    printf("SS server: %s\n", buffer);
+
+    char c = 's';
+    send(sock, &c, sizeof(c), 0);
+
+    char ack_start[10];
+    recv(sock, ack_start, sizeof(ack_start), 0);
+    if (strcmp(ack_start, "START") == 0)
+        printf("START ack received\n");
+
+    int ack;
+    bzero(buffer, 1024);
+    strcpy(buffer, srcPath);
+    printf("Sent: %s\n", buffer);
+    send(sock, &buffer, sizeof(buffer), 0);
+    recv(sock, &ack, sizeof(ack), 0);
+
+    bzero(buffer, 1024);
+    strcpy(buffer, destPath);
+    printf("Sent: %s\n", buffer);
+    send(sock, &buffer, sizeof(buffer), 0);
+    recv(sock, &ack, sizeof(ack), 0);
+
+    char ack_stop[10];
+    recv(sock, ack_stop, sizeof(ack_stop), 0);
+    if (strcmp(ack_stop, "STOP") == 0)
+        printf("STOP ack received\n");
+
+    close(sock);
+    printf("Disconnected from the storage server with port %d.\n", ss_port);
 }
 int main()
 {
@@ -409,7 +460,7 @@ int main()
             // for each client we have to have a different thread
             if (!storage_servers_connected)
                 continue;
-            
+
             printf("\n");
 
             // create_file_dir(1235, 'f', "dir1/dir3/file.txt"); // the last 2 arguments will be user input and sent from client to nm server; get port from the trie/hashmap
@@ -424,9 +475,11 @@ int main()
             // delete_file_dir(1235,'D', "dir1/dir2");
             // printf("\n");
 
-            copy_file_dir_nm(1235,"main_dir","dest");
-            printf("\n");
+            // copy_file_dir_nm(1235, "main_dir", "dest");
+            // printf("\n");
 
+            copy_file_dir_nm_self(1235, "main_dir", "dest");
+            printf("\n");
 
             // copy_file_dir();
         }

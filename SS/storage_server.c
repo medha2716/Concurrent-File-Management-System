@@ -239,6 +239,10 @@ void *nm_commands()
 
         int flag_success = 1;
 
+        char srcPath[PATH_MAX];
+        char destPath[PATH_MAX];
+        int ack;
+
         switch (choice)
         {
         case 'f': // for creation of file
@@ -266,6 +270,17 @@ void *nm_commands()
             break;
         case 'p': // for server that copies file/dir
             ss1_copy(nm_client_sock);
+            break;
+        case 's': //copy from self
+            
+            recv(nm_client_sock, srcPath, sizeof(srcPath), 0);
+            ack = 1;
+            send(nm_client_sock, &ack, sizeof(ack), 0);
+
+            recv(nm_client_sock, destPath, sizeof(destPath), 0);
+            ack = 1;
+            send(nm_client_sock, &ack, sizeof(ack), 0);
+            self_copy(srcPath,destPath);
             break;
         default:
             // (when choice is none of the above)

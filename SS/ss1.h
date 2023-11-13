@@ -13,6 +13,7 @@
 
 
 #define PATH_MAX 1024
+#define BUFFER_SIZE 1024
 
 int directoryExists( char *path);
 void get_accessible_path_present( char *relativePath);
@@ -25,6 +26,8 @@ int delete_dir(char *relativePath);
 
 int ss1_copy(int sock);
 void copy_ss2(int client_sock);
+
+int self_copy(char *srcPath, char *destPath);
 
 #define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
 
