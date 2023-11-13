@@ -216,6 +216,25 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     if (strcmp(ack_start, "START") == 0)
         printf("START ack received\n");
 
+
+    bzero(buffer, 1024);
+    strcpy(buffer, "HELLO, THIS IS NM SERVER.");
+    printf("NM server: %s\n", buffer);
+    send(sock2, buffer, strlen(buffer), 0);
+
+    bzero(buffer, 1024);
+    recv(sock2, buffer, sizeof(buffer), 0);
+    printf("SS server: %s\n", buffer);
+
+
+    c = 'c';
+    send(sock2, &c, sizeof(c), 0);
+
+   
+    recv(sock2, ack_start, sizeof(ack_start), 0);
+    if (strcmp(ack_start, "START") == 0)
+        printf("START ack received\n");
+
     // start
     bzero(buffer, 1024);
     strcpy(buffer, srcPath);
@@ -287,6 +306,11 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
 
     char ack_stop[10];
     recv(sock1, ack_stop, sizeof(ack_stop), 0);
+    if (strcmp(ack_stop, "STOP") == 0)
+        printf("STOP ack received\n");
+    
+    
+    recv(sock2, ack_stop, sizeof(ack_stop), 0);
     if (strcmp(ack_stop, "STOP") == 0)
         printf("STOP ack received\n");
 
