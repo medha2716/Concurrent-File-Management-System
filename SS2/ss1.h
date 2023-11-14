@@ -33,5 +33,5 @@ char* file_details(char *filename);
 
 #define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
 
-#define MAX_CLIENTS 50
+#define MAX_CLIENTS 20 //as in doubts doc
 
