@@ -8,3 +8,5 @@
 - keep a semaphore for each ss, only one client can access an ss whether to delete/create/write/copy, but severa can read and ask for file details
 also when delete/create/write/copy, read and file details cannot happen. implememt this in nm server??
 (can use a different idea)
+
+- i am writing to file not appending

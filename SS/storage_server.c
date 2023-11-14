@@ -139,6 +139,11 @@ void *client_handle(void *param)
         recv(*client_sock, buffer, sizeof(buffer), 0);
         read_file(*client_sock, buffer);
         break;
+    case 'w':
+        bzero(buffer, 1024);
+        recv(*client_sock, buffer, sizeof(buffer), 0);
+        write_file(*client_sock, buffer);
+        break;
     default:
         printf("Unsure what client wants to do\n");
         break;
