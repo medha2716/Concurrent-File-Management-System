@@ -4,15 +4,7 @@
 #include <stdlib.h>
 #include "ss1.h"
 
-#define CHUNK_SIZE 1024
 
-typedef struct chunk
-{
-    int chunk_no; // total number of chunks in total
-    char chunk_buffer[CHUNK_SIZE];
-    uint32_t seq; // chunk no i have sent right now
-                  // int ack; // the byte number that the receiver expects to receive next
-} chunk;
 
 int waitForAck(int sock, int expectedAck, int timeoutSeconds)
 {
@@ -62,9 +54,9 @@ int waitForAck(int sock, int expectedAck, int timeoutSeconds)
     return 0;
 }
 
-int main()
+int read_file(int sock, char* path)
 {
-    int sock;
+    
     // till nm receives stop, client is reading. if at any point client does not send back ack in 1 second, end communication to free file for others.
 
     // alternative and better is that we dont wait for acks like in tcp from udp, if at
@@ -86,7 +78,7 @@ int main()
     char buffer[CHUNK_SIZE];
 
     // Open the file in read-only mode
-    file_descriptor = open("file.txt", O_RDONLY);
+    file_descriptor = open(path, O_RDONLY);
 
     if (file_descriptor == -1)
     {

@@ -134,10 +134,16 @@ void *client_handle(void *param)
         recv(*client_sock, &ack, sizeof(ack), 0);
         printf("Received ack\n");
         break;
+    case 'r':
+        bzero(buffer, 1024);
+        recv(*client_sock, buffer, sizeof(buffer), 0);
+        read_file(*client_sock, buffer);
+        break;
     default:
         printf("Unsure what client wants to do\n");
         break;
     }
+    
 
     if (flag_success)
     {
