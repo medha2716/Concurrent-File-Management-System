@@ -64,6 +64,29 @@ bool isEmpty(struct TrieNode* root)
 }
 
 // TrieNode delete(struct Trienode*,)
+void deleteAllNodes(struct TrieNode* node) {
+    if (node == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        if (node->children[i] != NULL) {
+            deleteAllNodes(node->children[i]);
+            node->children[i]->endnum=0;
+            node->children[i]->end=false;
+        }
+    }
+
+    free(node);
+}
+void deleteNodesStartingFrom(struct TrieNode* node) {
+    int startIndex = '/' - '!';
+
+        if (node->children[startIndex] != NULL) {
+            deleteAllNodes(node->children[startIndex]);
+            node->children[startIndex] = NULL;
+        }
+}
 
 struct TrieNode* removee(struct TrieNode* root, const char* key, int depth)
 {
@@ -81,6 +104,7 @@ struct TrieNode* removee(struct TrieNode* root, const char* key, int depth)
             root->endnum=0;
             root->end = false;
         }
+        deleteNodesStartingFrom(root);
  
         // If given is not prefix of any other word
         if (isEmpty(root)) {
@@ -94,8 +118,7 @@ struct TrieNode* removee(struct TrieNode* root, const char* key, int depth)
     // If not last character, recur for the child
     // obtained using ASCII value
     int index = key[depth] - '!';
-    root->children[index] = 
-          removee(root->children[index], key, depth + 1);
+    root->children[index] = removee(root->children[index], key, depth + 1);
  
     // If root does not have any child (its only child got 
     // deleted), and it is not end of another word.
@@ -106,6 +129,8 @@ struct TrieNode* removee(struct TrieNode* root, const char* key, int depth)
  
     return root;
 }
+
+
 
 int main() {
     // Example usage
@@ -154,28 +179,29 @@ int main() {
 
     // removee(root,"home/user/documents",s);
     // removee(root,"hii",s);
-    // removee(root,"hi",s);
+    root=removee(root,"a/b/c",s);
+   
     
 
     // Example search
 
-    if (searchPath(root, "hii")) {
-        printf("Path 1 found in the trie in ss%d !\n",searchPath(root, "hii"));
+    if (searchPath(root, "a/b")) {
+        printf("Path 1 found in the trie in ss%d !\n",searchPath(root, "a/b"));
     } else {
         printf("Path 1 not found in the trie!\n");
     }
-     if (searchPath(root,"hi")) {
-        printf("Path 2 found in the trie in ss%d !\n",searchPath(root, "hi"));
+     if (searchPath(root,"a/b/c")) {
+        printf("Path 2 found in the trie in ss%d !\n",searchPath(root, "a/b/c"));
     } else {
         printf("Path 2 not found in the trie!\n");
     }
-      if (searchPath(root,"hi.")) {
-        printf("Path 3 found in the trie in ss%d\n",searchPath(root, "hi."));
+      if (searchPath(root,"a/b/c/d")) {
+        printf("Path 3 found in the trie in ss%d\n",searchPath(root, "a/b/c/d"));
     } else {
         printf("Path 3 not found in the trie!\n");
     }
-    if (searchPath(root,"a/b/c/d")) {
-        printf("Path 4 found in the trie in ss%d !\n",searchPath(root, "a/b/c/d"));
+    if (searchPath(root,"a/b/cc/d")) {
+        printf("Path 4 found in the trie in ss%d !\n",searchPath(root, "a/b/cc/d"));
     } else {
         printf("Path 4 not found in the trie!\n");
     }
