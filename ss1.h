@@ -42,6 +42,7 @@ int self_copy(char *srcPath, char *destPath);
 char* file_details(char *filename);
 
 int read_file(int sock, char* path);
+void write_file(int sock,char* path);
 
 #define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
 

@@ -7,7 +7,7 @@
 // and while doing each command lock and unlock
 
 // also do what we did for peek at regular intervals to check if any files have been added to server and tell nm server
-#include "ss1.h"
+#include "../ss1.h"
 
 char HOME[1024];
 
