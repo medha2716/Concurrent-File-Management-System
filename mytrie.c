@@ -6,17 +6,21 @@
 #include<stdbool.h>
 
 #define ALPHABET_SIZE 94
-
+struct info{
+    int port_no;
+    
+};
 struct TrieNode {
     struct TrieNode *children[ALPHABET_SIZE];
     bool end;
     int endnum;
+    struct info* myinfo;
 };
 
 struct TrieNode* createNode() {
     struct TrieNode *node = (struct TrieNode*)malloc(sizeof(struct TrieNode));
     node->end=false;
-    node->end=0;
+    node->endnum=0;
     if (node) {
         for (int i = 0; i < ALPHABET_SIZE; i++) {
             node->children[i] = NULL;
@@ -28,31 +32,38 @@ struct TrieNode* createNode() {
 void insertPath(struct TrieNode *root, const char *path,int s) {
     struct TrieNode *current = root;
     int len = strlen(path);
+    int port=1111; // get port , need to change
 
     for (int i = 0; i < len; i++) {
         int index = path[i] - '!';
         if (!current->children[index]) {
             current->children[index] = createNode();
+            current->children[index]->myinfo=(struct info*)malloc(sizeof(struct info));
         }
         current = current->children[index];
     }
     current->end=true;
     current->endnum=s;
+    current->myinfo->port_no=port;
 }
 
-int searchPath(struct TrieNode *root, const char *path) {
+int* searchPath(struct TrieNode *root, const char *path) {
+    int* ans=(int*)malloc(sizeof(int)*2);
     struct TrieNode *current = root;
     int len = strlen(path);
 
     for (int i = 0; i < len; i++) {
         int index = path[i] - '!';
         if (!current->children[index]) {
-            return 0; // Path not found
+            ans[0]=0;
+            ans[1]=0;
+            return ans; // Path not found
         }
         current = current->children[index];
     }
-
-    return current->endnum; // Path found
+ans[0]=current->endnum;
+ans[1]=current->myinfo->port_no;
+    return ans; // Path found
 }
 
 bool isEmpty(struct TrieNode* root)
@@ -91,22 +102,17 @@ void deleteNodesStartingFrom(struct TrieNode* node) {
 struct TrieNode* removee(struct TrieNode* root, const char* key, int depth)
 {
     
-    // If tree is empty
     if (!root)
         return NULL;
  
-    // If last character of key is being processed
     if (depth == strlen(key)) {
  
-        // This node is no more end of word after
-        // removal of given key
         if (root->end){
             root->endnum=0;
             root->end = false;
         }
         deleteNodesStartingFrom(root);
  
-        // If given is not prefix of any other word
         if (isEmpty(root)) {
             free (root);
             root = NULL;
@@ -115,8 +121,7 @@ struct TrieNode* removee(struct TrieNode* root, const char* key, int depth)
         return root;
     }
  
-    // If not last character, recur for the child
-    // obtained using ASCII value
+   
     int index = key[depth] - '!';
     root->children[index] = removee(root->children[index], key, depth + 1);
  
@@ -135,7 +140,7 @@ struct TrieNode* removee(struct TrieNode* root, const char* key, int depth)
 int main() {
     // Example usage
     struct TrieNode *root = createNode();
-
+    root->myinfo=(struct info*)malloc(sizeof(struct info));
     // Assuming struct_received.accessible_paths is a string containing paths separated by spaces
     // char *token = strtok(struct_received.accessible_paths, " ");
     // while (token != NULL) {
@@ -152,7 +157,9 @@ int main() {
         char *input;
         input=(char*)malloc(sizeof(char)*1024);
         scanf("%s",input);
-        int ss_num=searchPath(root,input); // need to get
+        int* search_ss_port=searchPath(root,input);
+        int ss_num=search_ss_port[0];
+        int port_num=search_ss_port[1]; // need to get
         if(ss_num==0){
             // ss_num=2;
             printf("give no\n");
@@ -184,24 +191,28 @@ int main() {
     
 
     // Example search
-
-    if (searchPath(root, "a/b")) {
-        printf("Path 1 found in the trie in ss%d !\n",searchPath(root, "a/b"));
+    int* ex1=searchPath(root, "a/b");
+    if (ex1[0]) {
+        printf("Path 1 found in the trie in ss%d !\n",ex1[0]);
     } else {
         printf("Path 1 not found in the trie!\n");
     }
-     if (searchPath(root,"a/b/c")) {
-        printf("Path 2 found in the trie in ss%d !\n",searchPath(root, "a/b/c"));
+    int* ex2=searchPath(root, "a/b/c");
+
+     if (ex2[0]) {
+        printf("Path 2 found in the trie in ss%d !\n",ex2[0]);
     } else {
         printf("Path 2 not found in the trie!\n");
     }
-      if (searchPath(root,"a/b/c/d")) {
-        printf("Path 3 found in the trie in ss%d\n",searchPath(root, "a/b/c/d"));
+int *ex3=searchPath(root, "a/b/c/d");
+      if (ex3[0]) {
+        printf("Path 3 found in the trie in ss%d\n",ex3[0]);
     } else {
         printf("Path 3 not found in the trie!\n");
     }
-    if (searchPath(root,"a/b/cc/d")) {
-        printf("Path 4 found in the trie in ss%d !\n",searchPath(root, "a/b/cc/d"));
+int* ex4=searchPath(root,"a/b/cc/d");
+    if (ex4[0]) {
+        printf("Path 4 found in the trie in ss%d !\n",ex4[0]);
     } else {
         printf("Path 4 not found in the trie!\n");
     }
@@ -210,7 +221,7 @@ int main() {
 
     return 0;
 }
-
+// search[0] gives ss num , search[1] gives port number
 // same input and output 
 /*
 10
