@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "ss1.h"
 
 // 1 for ss (ss_or_client)
 // 2 for client
@@ -18,6 +19,15 @@ typedef struct send_nm_init
     int port_ss;
     char ip[40];
 } send_nm_init;
+
+typedef struct paths_src_dest
+{
+    char ch;
+    char path1[PATH_MAX];
+    char path2[PATH_MAX];
+} paths_src_dest;
+
+
 
 char *ip = "127.0.0.1";
 int port = 5566; // SS KNOWS PORT NUMBER OF NM server
@@ -136,7 +146,7 @@ void delete_file_dir(int ss_port, char file_or_dir, char *path)
     printf("Disconnected from the storage server with port %d.\n", ss_port);
 }
 
-void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
+void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
 {
     //   if (argc != 3)
     // {
@@ -172,7 +182,7 @@ void copy_file_dir_nm(int ss_port, char *srcPath, char *destPath)
     connect(sock1, (struct sockaddr *)&addr1, sizeof(addr1));
     printf("Connected to the storage server 1.\n");
 
-    int port2 = 2345; // copy 2
+    // int port2 = 2345; // copy 2
     int sock2;
     struct sockaddr_in addr2;
 
@@ -458,10 +468,105 @@ int main()
         else if (ss_or_client == 2) // it is a client
         {
             // for each client we have to have a different thread
-            if (!storage_servers_connected)
-                continue;
+            char *response = "CLIENT COMMAND RECEIVED";
+            send(ss_sock, response, sizeof(response), 0);
 
-            printf("\n");
+            printf("NM Server: %s\n", response);
+
+            char ch;
+            paths_src_dest struct_received;
+            recv(ss_sock, &struct_received, sizeof(struct_received), 0);
+
+            ch=struct_received.ch;
+            
+
+            int ss_port_client = 0; // if not found send 0
+            int ss_port_nm = 0;
+
+            // for ch=='c
+            int ss1_client = 0;
+            int ss2_client = 0;
+            int ss1_nm = 0;
+            int ss2_nm = 0;
+
+            // if (!storage_servers_connected)
+            // {
+            //     printf(RED);
+            //     printf("No storage servers connected to the NM server at the moment\n"); //define this error in search code
+            //     printf(RST);
+            // }
+
+            char buffersend[1024];
+            char path1[PATH_MAX];
+
+            if (ch != 'c')
+            {
+                strcpy(path1,struct_received.path1);
+                printf(CSTM2);
+                printf("Path: %s\n\n", path1);
+                printf(RST);
+            }
+            else
+            {
+                printf(CSTM2);
+                printf("Paths: %s %s\n\n", struct_received.path1, struct_received.path2);
+                printf(RST);
+            }
+            
+            //searchhhhhh
+
+            printf(GRN);
+            printf("Storage servers found!\n"); // defie this error in error code
+            printf(RST);
+            ss_port_client = 1234;
+            ss_port_nm = 1235;
+
+            ss1_nm = 1234;
+            ss2_nm = 1234; // 2345
+
+            bzero(buffersend, 1024);
+            if ((ss_port_nm != 0)&&ch!='c')
+            {
+                strcpy(buffersend, "Storage server found\n");
+                send(ss_sock, buffersend, sizeof(buffersend), 0);
+            }
+            else if((ch=='c')&&(ss1_nm!=0)&&(ss2_nm!=0))
+            {
+                strcpy(buffersend, "Storage server found\n");
+                send(ss_sock, buffersend, sizeof(buffersend), 0);
+            }
+            else
+            {
+                strcpy(buffersend, "Storage server not found\n");
+                send(ss_sock, buffersend, sizeof(buffersend), 0);
+                continue;
+            }
+
+            if (ss_port_nm != 0)
+            {
+                if ((ch == 'r') || (ch == 't') || (ch == 'w'))
+                {
+                    send(ss_sock, &ss_port_client, sizeof(ss_port_client), 0);
+                    printf("Port sent to client for SS connection: %d\n", ss_port_client);
+                    printf("\n");
+                }
+                else
+                {
+                    // receive paths and call functions
+
+                    if ((ch == 'f') || (ch == 'd'))
+                        create_file_dir(ss_port_nm, ch, path1); //"dir1/dir3/file.txt"
+                    else if ((ch == 'F') || (ch == 'D'))
+                        delete_file_dir(ss_port_nm, ch, path1); //"dir1/dir3/file.txt"
+                    else if (ch == 'c')
+                    {
+                        if (ss1_nm == ss2_nm)
+                            copy_file_dir_nm_self(ss1_nm, struct_received.path1, struct_received.path2);
+                        else
+                            copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2);
+                    }
+                }
+            }
 
             // create_file_dir(1235, 'f', "dir1/dir3/file.txt"); // the last 2 arguments will be user input and sent from client to nm server; get port from the trie/hashmap
             // printf("\n");
@@ -478,8 +583,8 @@ int main()
             // copy_file_dir_nm(1235, "main_dir", "dest");
             // printf("\n");
 
-            copy_file_dir_nm_self(1235, "main_dir", "dest");
-            printf("\n");
+            // copy_file_dir_nm_self(1235, "main_dir", "dest");
+            // printf("\n");
 
             // copy_file_dir();
         }

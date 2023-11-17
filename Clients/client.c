@@ -7,9 +7,14 @@
 #include "../ss1.h"
 #define MAX_FILE_READ 4096
 
+typedef struct paths_src_dest
+{
+  char ch;
+  char path1[PATH_MAX];
+  char path2[PATH_MAX];
+} paths_src_dest;
+
 char command_indicator;
-
-
 
 int waitForAck(int sock, int expectedAck, int timeoutSeconds)
 {
@@ -105,7 +110,7 @@ void write_file_client(char *buffer, int sock)
     int check = waitForAck(sock, chunk_array[i]->seq, 10);
     if (check < 0)
     {
-      printf("hi");
+      // printf("hi");
       break;
     }
   }
@@ -129,18 +134,25 @@ int execute1()
 
   // char *path = "file.txt";
   char path[PATH_MAX];
+
+  printf(CYN);
   printf("Enter file path: ");
+  printf(RST);
+
   scanf("%s", path);
+  printf("\n");
 
   // to storage server
   char *ip = "127.0.0.1";
-  int port = 1234; // GIVEN BY NM //first contact nm and get port
 
   int sock;
   struct sockaddr_in addr;
   socklen_t addr_size;
   char buffer[1024];
   int n;
+
+  // connect to nm server
+  int port = 5566;
 
   sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0)
@@ -149,7 +161,70 @@ int execute1()
     exit(1);
   }
 
-  printf("[+]TCP server socket created.\n");
+  printf("[+]TCP server socket created for connecting to NM server.\n");
+
+  memset(&addr, '\0', sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_port = port;
+  addr.sin_addr.s_addr = inet_addr(ip);
+
+  if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) >= 0)
+  {
+    printf("Connected to the NM server.\n");
+
+    int ss_or_client = 2;
+    send(sock, &ss_or_client, sizeof(ss_or_client), 0);
+  }
+
+  bzero(buffer, BUFFER_SIZE);
+  recv(sock, buffer, sizeof(buffer), 0);
+
+  // printf("NM Server: %s\n", buffer);
+
+  // send(sock, &command_indicator, sizeof(command_indicator), 0);
+
+  paths_src_dest struct_to_send;
+  char buffersend[1024];
+  struct_to_send.ch = command_indicator;
+  strcpy(struct_to_send.path1, path);
+  // strcpy(struct_to_send.path2, NULL);
+
+  send(sock, &struct_to_send, sizeof(struct_to_send), 0);
+
+  printf(CSTM2);
+  printf("Path sent: %s\n\n", path);
+  printf(RST);
+
+  bzero(buffersend, 1024);
+  recv(sock, buffersend, sizeof(buffersend), 0);
+
+  if (strcmp(buffersend, "Storage server not found\n") == 0)
+    return -1;
+
+  int ss_port;
+  recv(sock, &ss_port, sizeof(ss_port), 0);
+
+  if (ss_port != 0)
+    port = ss_port;
+  else
+  {
+    printf(RED);
+    printf("File path (storage server with this path) not found!\n");
+    printf(RST);
+    return -1;
+  }
+
+  close(sock);
+  printf("Disconnected from the NM server\n");
+
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock < 0)
+  {
+    perror("\n[-]Socket error");
+    return -1;
+  }
+
+  printf("\n\n[+]TCP server socket created to communicate with SS directly.\n");
 
   memset(&addr, '\0', sizeof(addr));
   addr.sin_family = AF_INET;
@@ -161,13 +236,18 @@ int execute1()
     printf("Connected to the server.\n");
 
     bzero(buffer, 1024);
-    strcpy(buffer, "HELLO, THIS IS CLIENT.");
-    printf("Client: %s\n", buffer);
+    strcpy(buffer, "THIS IS THE CLIENT.");
+    // printf("Client: %s\n", buffer);
     send(sock, buffer, strlen(buffer), 0);
 
     bzero(buffer, 1024);
     recv(sock, buffer, sizeof(buffer), 0);
-    printf("Storage Server: %s\n", buffer);
+
+    printf("\033[38;2;173;216;230m");
+    printf("Storage Server:\n");
+    printf(RST);
+
+    printf("%s\n", buffer);
 
     char c = command_indicator; /// t,r,w
     send(sock, &c, sizeof(c), 0);
@@ -185,11 +265,14 @@ int execute1()
       bzero(result, 4096);
       recv(sock, result, sizeof(result), 0);
 
-      printf("%s\n", result);
+      printf("%s", result);
 
       int ack = 1;
       send(sock, &ack, sizeof(ack), 0);
+
+      printf(GRN);
       printf("Sent ack\n");
+      printf(RST);
     }
     else if (c == 'r')
     {
@@ -212,31 +295,16 @@ int execute1()
     }
     else if (c == 'w')
     {
-      printf("Enter the content you want to write in the file: (press enter twice once you are done typing)\n");
+      printf("Enter the content you want to write in the file:\n");
       char texts[MAX_FILE_READ];
-      char temp[MAX_FILE_READ];
+      // char temp[MAX_FILE_READ];
 
       bzero(texts, MAX_FILE_READ);
-      bzero(temp, MAX_FILE_READ);
+      // bzero(temp, MAX_FILE_READ);
 
-      while (1)
-      {
-        // Read a line from the user
-        if (fgets(temp, sizeof(temp), stdin) == NULL)
-        {
-          // Error or end of input
-          break;
-        }
-
-        // append the line to texts
-        strncat(texts, temp, sizeof(texts) - strlen(texts) - 1);
-
-        // check if the user pressed Enter without typing anything (empty line to finish)
-        if (strcmp(temp, "\n") == 0)
-        {
-          break;
-        }
-      }
+      printf(CSTM2);
+      scanf("%s", texts);
+      printf(RST);
 
       // remove the trailing newline character, if present
       size_t len = strlen(texts);
@@ -245,7 +313,7 @@ int execute1()
         texts[len - 1] = '\0';
       }
 
-      printf("The data you want to write to file:\n%s\n", texts);
+      // printf("The data you want to write to file:\n%s\n", texts);
 
       // now divide into chunks and send to storage server where it will write into file
 
@@ -258,13 +326,14 @@ int execute1()
     }
 
     close(sock);
-    printf("Disconnected from the server.\n");
+
+    printf("Disconnected from the server.\n\n");
     if (c == 'r')
     {
       printf("\e[1;36mFile data read: "); // for reading file
       for (int i = 0; i < chunk_no; i++)
       {
-        printf("%s", chunk_array[i]->chunk_buffer);
+        printf("%s\n", chunk_array[i]->chunk_buffer);
       }
       printf("\n\033[0m");
     }
@@ -274,6 +343,43 @@ int execute1()
 int execute()
 {
 
+  int array_size = (1024 / CHUNK_SIZE - 1) + 1000;
+
+  chunk **chunk_array = (chunk **)malloc(sizeof(chunk *) * array_size);
+
+  for (int i = 0; i < array_size; i++)
+  {
+    chunk_array[i] = (chunk *)malloc(sizeof(chunk));
+    // to know this chunk not yet received
+  }
+
+  int no_received = 0;
+  int chunk_no = array_size;
+
+  // char *path = "file.txt";
+  char path[PATH_MAX];
+  char path2[PATH_MAX];
+
+  if (command_indicator != 'c')
+  {
+    printf(CYN);
+    printf("Enter file path: ");
+    printf(RST);
+
+    scanf("%s", path);
+    printf("\n");
+  }
+  else
+  {
+    printf(CYN);
+    printf("Enter source and dest paths (space separated): ");
+    printf(RST);
+
+    scanf("%s %s", path, path2);
+    printf("\n");
+  }
+
+  // to storage server
   char *ip = "127.0.0.1";
 
   int sock;
@@ -282,6 +388,7 @@ int execute()
   char buffer[1024];
   int n;
 
+  // connect to nm server
   int port = 5566;
 
   sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -291,7 +398,7 @@ int execute()
     exit(1);
   }
 
-  printf("[+]TCP server socket created.\n");
+  printf("[+]TCP server socket created for connecting to NM server.\n");
 
   memset(&addr, '\0', sizeof(addr));
   addr.sin_family = AF_INET;
@@ -300,13 +407,59 @@ int execute()
 
   if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) >= 0)
   {
-    printf("Connected to the server.\n");
+    printf("Connected to the NM server.\n");
 
     int ss_or_client = 2;
     send(sock, &ss_or_client, sizeof(ss_or_client), 0);
   }
 
-  return 0;
+  bzero(buffer, BUFFER_SIZE);
+  recv(sock, buffer, sizeof(buffer), 0);
+
+  // printf("NM Server: %s\n", buffer);
+
+  paths_src_dest struct_to_send;
+
+  char buffersend[1024];
+  if (command_indicator != 'c')
+  {
+    struct_to_send.ch = command_indicator;
+    strcpy(struct_to_send.path1, path);
+    // strcpy(struct_to_send.path2, NULL);
+
+    send(sock, &struct_to_send, sizeof(struct_to_send), 0);
+
+    printf(CSTM2);
+    printf("Path sent: %s\n\n", struct_to_send.path1);
+    printf(RST);
+
+    bzero(buffersend, 1024);
+    recv(sock, buffersend, sizeof(buffersend), 0);
+
+    if (strcmp(buffersend, "Storage server not found\n") == 0)
+      return -1;
+  }
+  else
+  {
+    struct_to_send.ch = command_indicator;
+    strcpy(struct_to_send.path1, path);
+    strcpy(struct_to_send.path2, path2);
+
+    send(sock, &struct_to_send, sizeof(struct_to_send), 0);
+
+    printf(CSTM2);
+    printf("Path sent: %s %s\n\n", path, path2);
+    printf(RST);
+
+    bzero(buffersend, 1024);
+    recv(sock, buffersend, sizeof(buffersend), 0);
+
+    if (strcmp(buffersend, "Storage server not found\n") == 0)
+      return -1;
+  }
+
+  close(sock);
+  printf("Disconnected from the NM server\n\n");
 }
 
 int main()
@@ -316,10 +469,8 @@ int main()
   do
   {
 
-    system("clear");
-
     printf("\033[1;35m"); // Set text color to bright magenta
-    printf("File and Folder Operations Menu\n");
+    printf("\nFile and Folder Operations Menu\n");
     printf("\033[38;2;255;192;203m"); // Light Pink
     printf("1 Create a File\n");
     printf("\033[38;2;255;182;193m"); // Lighter Pink
@@ -340,7 +491,10 @@ int main()
     // copy-p(other),s(self)
 
     // Get user choice
-    printf("Enter your choice: ");
+    printf(CYN);
+    printf("\nEnter your choice: ");
+    printf(RST);
+
     scanf("%d", &choice);
 
     // Perform the chosen operation
@@ -397,5 +551,3 @@ int main()
 
   return 0;
 }
-
-

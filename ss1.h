@@ -48,3 +48,16 @@ void write_file(int sock,char* path);
 
 #define MAX_CLIENTS 20 // as mentioned in doubts doc
 
+#define RST "\033[0m"
+#define BLK "\033[30m"
+#define RED "\033[31m"
+#define GRN "\033[32m"
+#define YEL "\033[33m"
+#define BLU "\033[34m"
+#define MAG "\033[35m"
+#define CYN "\033[36m"
+#define WHT "\033[37m"
+
+// Custom color codes
+#define CSTM1 "\033[38;5;200m"
+#define CSTM2 "\033[38;5;220m"
