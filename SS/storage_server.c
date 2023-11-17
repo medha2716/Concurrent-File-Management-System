@@ -297,7 +297,6 @@ void *nm_commands()
         char destPath[PATH_MAX];
         int ack;
 
-        printf("hi %c\n", choice);
 
         switch (choice)
         {
@@ -594,7 +593,7 @@ int main()
     printf("Disconnected from the NM server.\n\n\n");
     printf(RST);
 
-    usleep(10);
+    usleep(10); 
 
     pthread_t connection_for_nm_commands;
     pthread_create(&connection_for_nm_commands, NULL, &nm_commands, &port_nm);

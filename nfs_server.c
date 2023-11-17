@@ -521,8 +521,8 @@ int main()
             ss_port_client = 1234;
             ss_port_nm = 1235;
 
-            ss1_nm = 1234;
-            ss2_nm = 1234; // 2345
+            ss1_nm = 1235;
+            ss2_nm = 1235; // 2345
 
             bzero(buffersend, 1024);
             if ((ss_port_nm != 0)&&ch!='c')
