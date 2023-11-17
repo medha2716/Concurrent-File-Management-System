@@ -522,7 +522,7 @@ int main()
             ss_port_nm = 1235;
 
             ss1_nm = 1235;
-            ss2_nm = 1235; // 2345
+            ss2_nm = 2346; // 2345
 
             bzero(buffersend, 1024);
             if ((ss_port_nm != 0)&&ch!='c')
@@ -563,7 +563,9 @@ int main()
                         if (ss1_nm == ss2_nm)
                             copy_file_dir_nm_self(ss1_nm, struct_received.path1, struct_received.path2);
                         else
-                            copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2);
+                            {
+                                copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2);
+                            }
                     }
                 }
             }

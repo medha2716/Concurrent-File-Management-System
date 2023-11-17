@@ -126,13 +126,23 @@ void *client_handle(void *param)
 
     switch (choice)
     {
-    case 'f':
+    case 't':
         bzero(buffer, 1024);
         recv(*client_sock, buffer, sizeof(buffer), 0);
-        strcpy(result,file_details(buffer));
-        send(*client_sock,result,sizeof(result),0);
+        strcpy(result, file_details(buffer));
+        send(*client_sock, result, sizeof(result), 0);
         recv(*client_sock, &ack, sizeof(ack), 0);
         printf("Received ack\n");
+        break;
+    case 'r':
+        bzero(buffer, 1024);
+        recv(*client_sock, buffer, sizeof(buffer), 0);
+        read_file(*client_sock, buffer);
+        break;
+    case 'w':
+        bzero(buffer, 1024);
+        recv(*client_sock, buffer, sizeof(buffer), 0);
+        write_file(*client_sock, buffer);
         break;
     default:
         printf("Unsure what client wants to do\n");
@@ -157,10 +167,11 @@ void *client_handle(void *param)
     return NULL;
 }
 
-void *client_interactions()
+void *client_interactions(void *arg)
 {
     char *ip = "127.0.0.1";
-    int port = 1234;
+    int port = *((int *)arg);
+    // int port = 1234;
 
     int ss_server_sock, client_sock;
     struct sockaddr_in ss_server_addr, client_addr;
@@ -221,10 +232,10 @@ void *client_interactions()
     return NULL;
 }
 
-void *nm_commands()
+void *nm_commands(void *arg)
 {
     char *ip = "127.0.0.1";
-    int port = 2345;
+     int port = *((int *)arg);
 
     int ss_server_sock, nm_client_sock;
     struct sockaddr_in ss_server_addr, nm_client_addr;
@@ -275,13 +286,17 @@ void *nm_commands()
         recv(nm_client_sock, &choice, sizeof(choice), 0);
 
         char *ack_start = "START";
+        printf(GRN);
         printf("START ack sent\n");
+        printf(RST);
         send(nm_client_sock, ack_start, strlen(ack_start), 0);
 
         int flag_success = 1;
+
         char srcPath[PATH_MAX];
         char destPath[PATH_MAX];
         int ack;
+
 
         switch (choice)
         {
@@ -311,8 +326,8 @@ void *nm_commands()
         case 'p': // for server that copies file/dir
             ss1_copy(nm_client_sock);
             break;
-        case 's': //copy from self
-            
+        case 's': // copy from self
+
             recv(nm_client_sock, srcPath, sizeof(srcPath), 0);
             ack = 1;
             send(nm_client_sock, &ack, sizeof(ack), 0);
@@ -320,7 +335,7 @@ void *nm_commands()
             recv(nm_client_sock, destPath, sizeof(destPath), 0);
             ack = 1;
             send(nm_client_sock, &ack, sizeof(ack), 0);
-            self_copy(srcPath,destPath);
+            self_copy(srcPath, destPath);
             break;
         default:
             // (when choice is none of the above)
@@ -423,11 +438,14 @@ void *update_file_structure_nm()
 
         search_directory(HOME, temp_to_store_current_paths);
 
-        printf("%s\n", temp_to_store_current_paths);
+        // printf("%s\n", temp_to_store_current_paths);
 
         if (strcmp(struct_to_send.accessible_paths, temp_to_store_current_paths) != 0)
         {
+            printf(CSTM1);
             printf("Change in File structure detected!\n");
+            printf(RST);
+            printf("%s\n", temp_to_store_current_paths);
 
             char *ip = "127.0.0.1";
             int port = 5566;
@@ -444,7 +462,9 @@ void *update_file_structure_nm()
                 perror("[-]Socket error");
                 exit(1);
             }
-            printf("[+]TCP server socket created for connecting to Naming Server..\n");
+            printf(CSTM2);
+            printf("[+]TCP server socket created for sending accessible paths to Naming Server..\n");
+            printf(RST);
 
             memset(&addr, '\0', sizeof(addr));
             addr.sin_family = AF_INET;
@@ -464,10 +484,12 @@ void *update_file_structure_nm()
 
             bzero(buffer, 1024);
             recv(sock, buffer, sizeof(buffer), 0);
+            printf(CSTM2);
             printf("Server: %s\n", buffer);
+            printf(RST);
 
             close(sock);
-            printf("Disconnected from the NM server.\n");
+            printf("Disconnected from the NM server.\n\n\n");
         }
         bzero(temp_to_store_current_paths, MAX_LENGTH_ACC_PATHS_ONE_SS);
         sleep(20);
@@ -511,14 +533,21 @@ int main()
         accessible_paths[len - 1] = '\0';
     }
 
-    printf("You entered the following accessible paths:\n%s\n", accessible_paths);
+    // printf("You entered the following accessible paths:\n%s\n\n", accessible_paths);
 
     // done taking user input for accessible paths
+    int port_nm;
+    printf("Enter port for NM connection: ");
+    scanf("%d", &port_nm); // 1235 for now
+
+    int port_client;
+    printf("Enter port for client interactions: ");
+    scanf("%d", &port_client); // 1234 for now
 
     // send struct to nm server
 
     char *ip = "127.0.0.1";
-    int port = 5566;
+    int port = 5566; // port of nm
 
     int sock;
     struct sockaddr_in addr;
@@ -532,7 +561,8 @@ int main()
         perror("[-]Socket error");
         exit(1);
     }
-    printf("[+]TCP server socket created for connecting to Naming Server..\n");
+    printf(GRN);
+    printf("\n[+]TCP server socket created for connecting to Naming Server..\n");
 
     memset(&addr, '\0', sizeof(addr));
     addr.sin_family = AF_INET;
@@ -548,8 +578,10 @@ int main()
 
     strcpy(struct_to_send.accessible_paths, accessible_paths);
     strcpy(struct_to_send.ip, ip);
-    struct_to_send.port_client = 1234; // HOW TO GIVE DIFF PORTS TO EACH SS???
-    struct_to_send.port_nm = 1235;
+    struct_to_send.port_client = port_client;
+    struct_to_send.port_nm = port_nm;
+
+    printf("%s\n", struct_to_send.ip);
 
     send(sock, &struct_to_send, sizeof(struct_to_send), 0);
 
@@ -558,20 +590,23 @@ int main()
     printf("Server: %s\n", buffer);
 
     close(sock);
-    printf("Disconnected from the NM server.\n");
+    printf("Disconnected from the NM server.\n\n\n");
+    printf(RST);
+
+    usleep(10); 
 
     pthread_t connection_for_nm_commands;
-    pthread_create(&connection_for_nm_commands, NULL, &nm_commands, NULL);
+    pthread_create(&connection_for_nm_commands, NULL, &nm_commands, &port_nm);
 
-    // pthread_t connection_for_client_interactions;
-    // pthread_create(&connection_for_client_interactions, NULL, &client_interactions, NULL);
+    pthread_t connection_for_client_interactions;
+    pthread_create(&connection_for_client_interactions, NULL, &client_interactions, &port_client);
 
-    // pthread_t update_file_dir;
-    // pthread_create(&update_file_dir, NULL, &update_file_structure_nm, NULL);
+    pthread_t update_file_dir;
+    pthread_create(&update_file_dir, NULL, &update_file_structure_nm, NULL);
 
     pthread_join(connection_for_nm_commands, NULL);
-    // pthread_join(connection_for_client_interactions, NULL);
-    // pthread_join(update_file_dir, NULL);
+    pthread_join(connection_for_client_interactions, NULL);
+    pthread_join(update_file_dir, NULL);
 
     return 0;
 }

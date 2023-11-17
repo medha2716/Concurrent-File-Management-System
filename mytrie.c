@@ -7,9 +7,16 @@
 
 #define ALPHABET_SIZE 94
 struct info{
-    int port_no;
+    int nm_port;
+    int client_port;
+
+    int nm_port_backup1;
+    int client_port_backup1;
     
+    int nm_port_backup2;
+    int client_port_backup2;
 };
+
 struct TrieNode {
     struct TrieNode *children[ALPHABET_SIZE];
     bool end;
@@ -29,7 +36,7 @@ struct TrieNode* createNode() {
     return node;
 }
 
-void insertPath(struct TrieNode *root, const char *path,int s) {
+void insertPath(struct TrieNode *root, const char *path,int s, int nm_port, int client_port) {
     struct TrieNode *current = root;
     int len = strlen(path);
     int port=1111; // get port , need to change
@@ -44,11 +51,12 @@ void insertPath(struct TrieNode *root, const char *path,int s) {
     }
     current->end=true;
     current->endnum=s;
-    current->myinfo->port_no=port;
+    current->myinfo->nm_port=nm_port;
+    current->myinfo->client_port=client_port;
 }
 
 int* searchPath(struct TrieNode *root, const char *path) {
-    int* ans=(int*)malloc(sizeof(int)*2);
+    int* ans=(int*)malloc(sizeof(int)*7);
     struct TrieNode *current = root;
     int len = strlen(path);
 
@@ -61,8 +69,13 @@ int* searchPath(struct TrieNode *root, const char *path) {
         }
         current = current->children[index];
     }
-ans[0]=current->endnum;
-ans[1]=current->myinfo->port_no;
+    ans[0]=current->endnum;
+    ans[2]=current->myinfo->nm_port;
+    ans[1]=current->myinfo->client_port;
+    ans[3]=current->myinfo->client_port_backup1;
+    ans[5]=current->myinfo->client_port_backup2;
+    ans[4]=current->myinfo->nm_port_backup1;
+    ans[6]=current->myinfo->nm_port_backup2;
     return ans; // Path found
 }
 
@@ -165,7 +178,7 @@ int main() {
             printf("give no\n");
             scanf("%d",&ss_num);            
         }
-        insertPath(root,input,ss_num);
+        insertPath(root,input,ss_num,ss_num,2);
         free(input);
     }
 
@@ -193,26 +206,26 @@ int main() {
     // Example search
     int* ex1=searchPath(root, "a/b");
     if (ex1[0]) {
-        printf("Path 1 found in the trie in ss%d !\n",ex1[0]);
+        printf("Path 1 found in the trie in ss %d !\n",ex1[2]);
     } else {
         printf("Path 1 not found in the trie!\n");
     }
     int* ex2=searchPath(root, "a/b/c");
 
      if (ex2[0]) {
-        printf("Path 2 found in the trie in ss%d !\n",ex2[0]);
+        printf("Path 2 found in the trie in ss%d !\n",ex2[2]);
     } else {
         printf("Path 2 not found in the trie!\n");
     }
 int *ex3=searchPath(root, "a/b/c/d");
       if (ex3[0]) {
-        printf("Path 3 found in the trie in ss%d\n",ex3[0]);
+        printf("Path 3 found in the trie in ss%d\n",ex3[2]);
     } else {
         printf("Path 3 not found in the trie!\n");
     }
 int* ex4=searchPath(root,"a/b/cc/d");
     if (ex4[0]) {
-        printf("Path 4 found in the trie in ss%d !\n",ex4[0]);
+        printf("Path 4 found in the trie in ss%d !\n",ex4[2]);
     } else {
         printf("Path 4 not found in the trie!\n");
     }

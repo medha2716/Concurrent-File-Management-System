@@ -232,10 +232,10 @@ void *client_interactions(void *arg)
     return NULL;
 }
 
-void *nm_commands()
+void *nm_commands(void *arg)
 {
     char *ip = "127.0.0.1";
-    int port = 1235;
+     int port = *((int *)arg);
 
     int ss_server_sock, nm_client_sock;
     struct sockaddr_in ss_server_addr, nm_client_addr;

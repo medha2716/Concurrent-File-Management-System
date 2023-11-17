@@ -5,15 +5,15 @@
 #include <grp.h>  //to get group
 
 // Regular text
-#define BLK "\e[0;30m"
-#define RED "\e[0;31m"
-#define GRN "\e[0;32m"
-#define YEL "\e[0;35m"
-#define BLU "\e[0;34m"
-#define MAG "\e[0;33m"
-#define CYN "\e[0;36m"
-#define WHT "\e[0;37m"
-#define GREY "\x1B[90m"
+// #define BLK "\e[0;30m"
+// #define RED "\e[0;31m"
+// #define GRN "\e[0;32m"
+// #define YEL "\e[0;35m"
+// #define BLU "\e[0;34m"
+// #define MAG "\e[0;33m"
+// #define CYN "\e[0;36m"
+// #define WHT "\e[0;37m"
+// #define GREY "\x1B[90m"
 #define COL_RESET "\x1B[0m"
 
 #include <stdio.h>
@@ -79,4 +79,57 @@ char *file_details(char *filename)
     }
 
     return result;
+}
+
+void write_file(int sock, char *path)
+{
+    int fileDescriptor;
+    fileDescriptor = open(path, O_WRONLY | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO);
+
+    if (fileDescriptor == -1) {
+        perror("Error opening file");
+        return;
+    } //dont send start ack
+
+    int array_size = (1024 / CHUNK_SIZE - 1) + 1000;
+
+    chunk **chunk_array = (chunk **)malloc(sizeof(chunk *) * array_size);
+
+    for (int i = 0; i < array_size; i++)
+    {
+      chunk_array[i] = (chunk *)malloc(sizeof(chunk));
+      // to know this chunk not yet received
+    }
+
+    int no_received = 0;
+    int chunk_no = array_size;
+    int i=0;
+    while (no_received < chunk_no)
+    {
+      chunk *received_packet = (chunk *)malloc(sizeof(chunk));
+
+      recv(sock, received_packet, sizeof(chunk), 0);
+      printf("[+]Data received: %s\n", received_packet->chunk_buffer);
+      strncpy(chunk_array[i++]->chunk_buffer,received_packet->chunk_buffer,sizeof(received_packet->chunk_buffer));
+      chunk_no = received_packet->chunk_no; // set the correct no of chunks
+
+    
+
+
+      ssize_t bytesWritten = write(fileDescriptor, received_packet->chunk_buffer, strlen(received_packet->chunk_buffer));
+
+        if (bytesWritten == -1) {
+            perror("Error writing to file");
+            close(fileDescriptor);
+            break;
+        }
+
+          int ack = received_packet->seq;
+      send(sock, &ack, sizeof(ack), 0);
+      printf("[+]Ack sent: %d\n",ack);
+      no_received++;
+      
+    }
+
+    close(fileDescriptor);
 }
