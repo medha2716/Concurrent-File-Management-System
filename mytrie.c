@@ -57,7 +57,14 @@ void insertPath(struct TrieNode *root, const char *path,int s, int nm_port, int 
 
 int* searchPath(struct TrieNode *root, const char *path) {
     int* ans=(int*)malloc(sizeof(int)*7);
+    for(int i=0;i<7;i++){
+        ans[i]=0;
+    }
+    if(!root){
+        return ans;
+    }
     struct TrieNode *current = root;
+
     int len = strlen(path);
 
     for (int i = 0; i < len; i++) {
@@ -65,6 +72,11 @@ int* searchPath(struct TrieNode *root, const char *path) {
         if (!current->children[index]) {
             ans[0]=0;
             ans[1]=0;
+            ans[2]=0;
+            ans[3]=0;
+            ans[4]=0;
+            ans[5]=0;
+            ans[6]=0;
             return ans; // Path not found
         }
         current = current->children[index];
@@ -87,7 +99,6 @@ bool isEmpty(struct TrieNode* root)
     return true;
 }
 
-// TrieNode delete(struct Trienode*,)
 void deleteAllNodes(struct TrieNode* node) {
     if (node == NULL) {
         return;
