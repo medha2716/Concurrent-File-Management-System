@@ -29,7 +29,7 @@ int create_file(char* relativePath)
         }
         else
         {
-            perror("open");
+            perror("132: Cannot create file");
             return 1;
         }
     }

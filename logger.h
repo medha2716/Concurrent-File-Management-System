@@ -22,7 +22,7 @@ void intialize_log()
         ;
     } 
     else {
-       perror("getcwd() error");
+       perror("71: getcwd() error");
     }
     sprintf(path, "%s/history.txt", homedir);
 	if (access(path, F_OK) != -1)

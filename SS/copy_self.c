@@ -10,21 +10,21 @@ void copyfile(const char *srcPath, const char *destPath) {
 
     src_fd = open(srcPath, O_RDONLY);
     if (src_fd == -1) {
-        perror("Failed to open source file");
+        perror("120: Failed to open source file");
         exit(1);
     }
 
     dest_fd = open(destPath, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR); // ask other server to do this
     
     if (dest_fd == -1) {
-        perror("Failed to open or create destination file");
+        perror("121: Failed to open or create destination file");
         close(src_fd);
         exit(1);
     }
 
     while ((bytes_read = read(src_fd, buffer, sizeof(buffer))) > 0) { // send to other server
         if (write(dest_fd, buffer, bytes_read) != bytes_read) { // other server does this
-            perror("Failed to write to destination file");
+            perror("122: Failed to write to destination file");
             close(src_fd);
             close(dest_fd);
             exit(1);
@@ -45,7 +45,7 @@ void copydir(const char *srcPath, const char *destPath) {
 
     dir = opendir(srcPath);
     if (dir == NULL) {
-        perror("Failed to open source directory");
+        perror("123: Failed to open source directory");
         exit(1);
     }
 
@@ -75,7 +75,7 @@ int self_copy(char *srcPath, char *destPath) {
    
     struct stat srcStat;
     if (stat(srcPath, &srcStat) == -1) {
-        perror("Failed to get source file/directory information");
+        perror("124: Failed to get source file/directory information");
         exit(1);
     }
 
@@ -84,7 +84,7 @@ int self_copy(char *srcPath, char *destPath) {
     } else if (S_ISDIR(srcStat.st_mode) == 1) {
         copydir(srcPath, destPath);
     } else {
-        fprintf(stderr, "Source is neither a regular file nor a directory.\n");
+        fprintf(stderr, "125: Source is neither a regular file nor a directory.\n");
         exit(1);
     }
 

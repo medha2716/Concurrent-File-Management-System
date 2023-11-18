@@ -51,7 +51,7 @@ void create_file_dir(int ss_port, char file_or_dir, char *path)
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
     {
-        perror("[-]Socket error");
+        perror("[-] 40: Socket error");
         exit(1);
     }
     printf("[+]TCP server socket created to connect to SS with port number %d\n", ss_port);
@@ -105,7 +105,7 @@ void delete_file_dir(int ss_port, char file_or_dir, char *path)
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
     {
-        perror("[-]Socket error");
+        perror("[-] 40: Socket error");
         exit(1);
     }
     printf("[+]TCP server socket created to connect to SS with port number %d\n", ss_port);
@@ -169,7 +169,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
     sock1 = socket(AF_INET, SOCK_STREAM, 0);
     if (sock1 < 0)
     {
-        perror("[-]Socket error");
+        perror("[-] 40: Socket error");
         exit(1);
     }
     printf("[+]TCP server socket created.\n");
@@ -189,7 +189,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
     sock2 = socket(AF_INET, SOCK_STREAM, 0);
     if (sock2 < 0)
     {
-        perror("[-]Socket error");
+        perror("[-] 40: Socket error");
         exit(1);
     }
     printf("[+]TCP server socket created.\n");
@@ -329,7 +329,7 @@ void copy_file_dir_nm_self(int ss_port, char *srcPath, char *destPath)
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
     {
-        perror("[-]Socket error");
+        perror("[-] 40: Socket error");
         exit(1);
     }
     printf("[+]TCP server socket created to connect to SS with port number %d\n", ss_port);
@@ -391,7 +391,7 @@ int main()
     server_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (server_sock < 0)
     {
-        perror("[-]Socket error");
+        perror("[-] 40: Socket error");
         exit(1);
     }
     printf("[+]TCP server socket created\n");
@@ -404,7 +404,7 @@ int main()
     n = bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
     if (n < 0)
     {
-        perror("[-]Bind error");
+        perror("[-] 41: Bind error");
         exit(1);
     }
     printf("[+]Bind to the port number: %d\n", port);
@@ -415,7 +415,7 @@ int main()
     if (listen(server_sock, 80) == 0) // 30 ss, 50 clients?
         printf("Listening...\n");
     else
-        printf("Listening Error\n");
+        printf("42: Listening Error\n");
 
     while (1)
     {
@@ -455,7 +455,7 @@ int main()
             }
             else
             {
-                printf("[-]Receiving Error.\n");
+                printf("[-] 43: Receiving Error.\n");
             }
 
             close(ss_sock);
@@ -537,7 +537,7 @@ int main()
             }
             else
             {
-                strcpy(buffersend, "Storage server not found\n");
+                strcpy(buffersend, "44: Storage server not found\n");
                 send(ss_sock, buffersend, sizeof(buffersend), 0);
                 continue;
             }

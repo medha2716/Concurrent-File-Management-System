@@ -46,7 +46,7 @@ int waitForAck(int sock, int expectedAck, int timeoutSeconds)
     int ack;
     if (recv(sock, &ack, sizeof(ack), 0) < 0)
     {
-      perror("error receiving ack from client");
+      perror("201: Error receiving ack from client");
       return -1;
     }
 
@@ -57,7 +57,7 @@ int waitForAck(int sock, int expectedAck, int timeoutSeconds)
     }
     else
     {
-      printf("Unexpected Ack received. Terminating communication.\n");
+      printf("202: Unexpected Ack received. Terminating communication.\n");
       return -1;
     }
   }
@@ -157,7 +157,7 @@ int execute1()
   sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0)
   {
-    perror("[-]Socket error");
+    perror("[-] 200: Socket error");
     exit(1);
   }
 
@@ -198,7 +198,7 @@ int execute1()
   bzero(buffersend, 1024);
   recv(sock, buffersend, sizeof(buffersend), 0);
 
-  if (strcmp(buffersend, "Storage server not found\n") == 0)
+  if (strcmp(buffersend, "203: Storage server not found\n") == 0)
     return -1;
 
   int ss_port;
@@ -209,7 +209,7 @@ int execute1()
   else
   {
     printf(RED);
-    printf("File path (storage server with this path) not found!\n");
+    printf("204: File path (storage server with this path) not found!\n");
     printf(RST);
     return -1;
   }
@@ -220,7 +220,7 @@ int execute1()
   sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0)
   {
-    perror("\n[-]Socket error");
+    perror("\n[-] 200: Socket error");
     return -1;
   }
 
@@ -394,7 +394,7 @@ int execute()
   sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0)
   {
-    perror("[-]Socket error");
+    perror("[-] 200: Socket error");
     exit(1);
   }
 
@@ -436,7 +436,7 @@ int execute()
     bzero(buffersend, 1024);
     recv(sock, buffersend, sizeof(buffersend), 0);
 
-    if (strcmp(buffersend, "Storage server not found\n") == 0)
+    if (strcmp(buffersend, "203: Storage server not found\n") == 0)
       return -1;
   }
   else
@@ -454,7 +454,7 @@ int execute()
     bzero(buffersend, 1024);
     recv(sock, buffersend, sizeof(buffersend), 0);
 
-    if (strcmp(buffersend, "Storage server not found\n") == 0)
+    if (strcmp(buffersend, "203: Storage server not found\n") == 0)
       return -1;
   }
 

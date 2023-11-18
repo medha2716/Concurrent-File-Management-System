@@ -276,7 +276,7 @@ int main() {
     if (ex1[0]) {
         printf("Path 1 found in the trie in ss %d !\n",ex1[2]);
     } else {
-        printf("Path 1 not found in the trie!\n");
+        printf("52: Path 1 not found in the trie!\n");
     }
     }
      int lru2=check("a/b/c",lru);
@@ -289,7 +289,7 @@ int main() {
      if (ex2[0]) {
         printf("Path 2 found in the trie in ss%d !\n",ex2[2]);
     } else {
-        printf("Path 2 not found in the trie!\n");
+        printf("52: Path 2 not found in the trie!\n");
     }
     }
      int lru3=check("a/b/c/d",lru);
@@ -301,7 +301,7 @@ int *ex3=searchPath(root, "a/b/c/d");
       if (ex3[0]) {
         printf("Path 3 found in the trie in ss%d\n",ex3[2]);
     } else {
-        printf("Path 3 not found in the trie!\n");
+        printf("52: Path 3 not found in the trie!\n");
     }
     }
      int lru4=check("a/b/cc/d",lru);
@@ -313,7 +313,7 @@ int* ex4=searchPath(root,"a/b/cc/d");
     if (ex4[0]) {
         printf("Path 4 found in the trie in ss%d !\n",ex4[2]);
     } else {
-        printf("Path 4 not found in the trie!\n");
+        printf("52: Path 4 not found in the trie!\n");
     }
     }
 

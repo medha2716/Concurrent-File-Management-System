@@ -56,7 +56,7 @@ void copy_ss2(int client_sock)
 
             if (dest_fd == -1)
             {
-                perror("Failed to open or create destination file");
+                perror("106: Failed to open or create destination file");
                 // close(src_fd);
                 // exit(1);
             }
@@ -74,7 +74,7 @@ void copy_ss2(int client_sock)
                     break;
                 if (write(dest_fd, buffer, strlen(buffer)) != strlen(buffer))
                 { // other server does this
-                    perror("Failed to write to destination file");
+                    perror("105: Failed to write to destination file");
 
                     close(dest_fd);
                     exit(1);
@@ -182,7 +182,7 @@ void *client_interactions(void *arg)
     ss_server_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (ss_server_sock < 0)
     {
-        perror("[-]TCP Socket (for client interaction) creation error");
+        perror("[-] 104: TCP Socket (for client interaction) creation error");
         exit(1);
     }
     printf("[+]TCP server socket (for client interaction) created.\n");
@@ -195,7 +195,7 @@ void *client_interactions(void *arg)
     n = bind(ss_server_sock, (struct sockaddr *)&ss_server_addr, sizeof(ss_server_addr));
     if (n < 0)
     {
-        perror("[-]Bind socket (for client interaction) error");
+        perror("[-] 103: Bind socket (for client interaction) error");
         exit(1);
     }
     printf("[+]Bind to the port number: %d (for client interaction) \n", port);
@@ -246,7 +246,7 @@ void *nm_commands(void *arg)
     ss_server_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (ss_server_sock < 0)
     {
-        perror("[-]TCP Socket (for receiving NM commands) creation error");
+        perror("[-] 102: TCP Socket (for receiving NM commands) creation error");
         exit(1);
     }
     printf("[+]TCP server socket (for receiving NM commands) created.\n");
@@ -259,7 +259,7 @@ void *nm_commands(void *arg)
     n = bind(ss_server_sock, (struct sockaddr *)&ss_server_addr, sizeof(ss_server_addr));
     if (n < 0)
     {
-        perror("[-]Bind socket (for receiving NM commands) error");
+        perror("[-] 101: Bind socket (for receiving NM commands) error");
         exit(1);
     }
     printf("[+]Bind to the port number: %d (for receiving NM commands) \n", port);
@@ -459,7 +459,7 @@ void *update_file_structure_nm()
             sock = socket(AF_INET, SOCK_STREAM, 0);
             if (sock < 0)
             {
-                perror("[-]Socket error");
+                perror("[-] 100: Socket error");
                 exit(1);
             }
             printf(CSTM2);
@@ -558,7 +558,7 @@ int main()
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
     {
-        perror("[-]Socket error");
+        perror("[-] 100: Socket error");
         exit(1);
     }
     printf(GRN);

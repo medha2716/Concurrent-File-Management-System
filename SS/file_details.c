@@ -87,7 +87,7 @@ void write_file(int sock, char *path)
     fileDescriptor = open(path, O_WRONLY | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO);
 
     if (fileDescriptor == -1) {
-        perror("Error opening file");
+        perror("106: Error opening file");
         return;
     } //dont send start ack
 
@@ -119,7 +119,7 @@ void write_file(int sock, char *path)
       ssize_t bytesWritten = write(fileDescriptor, received_packet->chunk_buffer, strlen(received_packet->chunk_buffer));
 
         if (bytesWritten == -1) {
-            perror("Error writing to file");
+            perror("113: Error writing to file");
             close(fileDescriptor);
             break;
         }

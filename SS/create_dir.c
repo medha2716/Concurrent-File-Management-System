@@ -78,12 +78,12 @@ int create_dirs( char *relativePath)
             }
             else
             {
-                perror("Directory creation failed"); 
+                perror("130: Directory creation failed"); 
             }
         }
         else
         {
-            perror("Path length too long");
+            perror("131: Path length too long");
         }
     }
 

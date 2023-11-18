@@ -36,7 +36,7 @@ int waitForAck(int sock, int expectedAck, int timeoutSeconds)
         int ack;
         if (recv(sock, &ack, sizeof(ack), 0) < 0)
         {
-            perror("error receiving ack from client");
+            perror("110: Error receiving ack from client");
             return -1;
         }
 
@@ -47,7 +47,7 @@ int waitForAck(int sock, int expectedAck, int timeoutSeconds)
         }
         else
         {
-            printf("Unexpected Ack received. Terminating communication.\n");
+            printf("111: Unexpected Ack received. Terminating communication.\n");
             return -1;
         }
     }
@@ -82,7 +82,7 @@ int read_file(int sock, char* path)
 
     if (file_descriptor == -1)
     {
-        perror("Error opening file");
+        perror("112: Error opening file");
         return 1;
     }
 
@@ -100,7 +100,7 @@ int read_file(int sock, char* path)
 
     if (bytesRead == -1)
     {
-        perror("Error reading from file");
+        perror("113: Error reading from file");
     }
 
     int chunk_no = i;

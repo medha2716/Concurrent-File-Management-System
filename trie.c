@@ -70,7 +70,7 @@ int main() {
     if (searchPath(root, "var/log/system")) {
         printf("Path found in the trie!\n");
     } else {
-        printf("Path not found in the trie!\n");
+        printf("61: Path not found in the trie!\n");
     }
 
     return 0;
