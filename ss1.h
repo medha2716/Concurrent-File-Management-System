@@ -25,8 +25,8 @@ typedef struct chunk
                   // int ack; // the byte number that the receiver expects to receive next
 } chunk;
 
-#define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
-#define MAX_NO_PATHS 50
+#define MAX_LENGTH_ACC_PATHS_ONE_SS 20000
+#define MAX_NO_PATHS 10
 #define MAX_CLIENTS 20 // as mentioned in doubts doc
 
 

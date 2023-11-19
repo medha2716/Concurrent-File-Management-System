@@ -10,13 +10,13 @@
 // 1 for ss (ss_or_client)
 // 2 for client
 
-#define MAX_LENGTH_ACC_PATHS_ONE_SS 100000
+#define MAX_LENGTH_ACC_PATHS_ONE_SS 20000
 
 typedef struct send_nm_init
 {
-    char accessible_paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
     int port_nm;
-    int port_ss;
+    int port_client;
+    char accessible_paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
     char ip[40];
 } send_nm_init;
 
@@ -41,6 +41,7 @@ typedef struct storage_server_data
     int backup1_index;
     int backup2_index;
     int status;
+    char paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
 } storage_server_data;
 
 storage_server_data storage_server_array[67000];
@@ -252,11 +253,13 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
         printf("START ack received\n");
 
     // start
-    bzero(buffer, 1024);
+
+        bzero(buffer, 1024);
     strcpy(buffer, srcPath);
     printf("Sent: %s\n", buffer);
     send(sock1, &buffer, sizeof(buffer), 0);
     recv(sock1, &ack, sizeof(ack), 0);
+    
 
     bzero(buffer, 1024);
     strcpy(buffer, destPath);
@@ -499,6 +502,28 @@ void find_ports(int ss_idx, int *permission, int *ss_port_nm)
     }
     return;
 }
+
+void copy_one_ss_into_another(int src_idx, int dest_idx)
+{
+
+    int i = 0;
+    int src_port = storage_server_array[src_idx].nm_port;
+    int dest_port = storage_server_array[dest_idx].nm_port;
+
+    printf("%d %d\n",src_port,dest_port); //till here perfection
+
+    char **accessible_paths_individual = tokenize_paths(storage_server_array[src_idx].paths);
+
+    while (accessible_paths_individual[i] != NULL)
+    {
+        printf("%s\n",accessible_paths_individual[i]);
+        char send[PATH_MAX];
+        strcpy(send,accessible_paths_individual[i]);
+        copy_file_dir_nm(src_port, dest_port, send, send);
+        i++;
+    }
+}
+
 int main()
 {
     ss_root = createNode(); // to store servers
@@ -560,13 +585,15 @@ int main()
             printf("[+]New Storage Server discovered.\n");
 
             send_nm_init struct_received;
-            int check = recv(ss_sock, &struct_received, sizeof(struct_received), 0);
+
+            int check = recv(ss_sock, &struct_received, sizeof(struct_received) + 1024, 0);
+
             printf("Struct Received!\n");
             printf("Accessible Paths:\n%s", struct_received.accessible_paths);
 
-            printf("IP port: %s\n", struct_received.ip);
+            printf("IP port: %s\n", "127.0.0.1");
             printf("Port for NM connection: %d\n", struct_received.port_nm);
-            printf("Port for client interaction: %d\n", struct_received.port_ss);
+            printf("Port for client interaction: %d\n", struct_received.port_client);
 
             if (check >= 0) // struct received
             {
@@ -599,7 +626,8 @@ int main()
             else // new server so add paths to trie
             {
                 // if more than 2 ss then store paths in them and send their index
-                store_in_array(storage_servers_connected, struct_received.port_nm, struct_received.port_ss, -1, -1);
+                store_in_array(storage_servers_connected, struct_received.port_nm, struct_received.port_client, -1, -1);
+                strcpy(storage_server_array[storage_servers_connected].paths,struct_received.accessible_paths);
 
                 int i = 0;
                 while (accessible_paths_individual[i] != NULL)
@@ -609,6 +637,12 @@ int main()
                     i++;
                 }
             }
+
+            // if(storage_servers_connected==2)
+            // { 
+            //     printf("hi\n");
+            //     copy_one_ss_into_another(1, 2);
+            // }
         }
         else if (ss_or_client == 3)
         {
@@ -620,9 +654,9 @@ int main()
             int check = recv(ss_sock, &struct_received, sizeof(struct_received), 0);
             printf("Struct Received!\n");
             printf("Accessible Paths:\n%s", struct_received.accessible_paths);
-            printf("IP port: %s\n", struct_received.ip);
+            printf("IP port: %s\n", "127.0.0.1");
             printf("Port for NM connection: %d\n", struct_received.port_nm);
-            printf("Port for client interaction: %d\n", struct_received.port_ss);
+            printf("Port for client interaction: %d\n", struct_received.port_client);
 
             if (check >= 0) // struct received
             {
@@ -667,6 +701,9 @@ int main()
 
             int ss_num1;
             int ss_num2;
+
+            
+
             if (ch != 'c')
             {
                 strcpy(path1, struct_received.path1);
@@ -779,7 +816,7 @@ int main()
                     printf("Port sent to client for SS connection: %d\n", ss_port_client);
                     printf("\n");
                 }
-                else // change file structureeeee 
+                else // change file structureeeee
                 {
                     // receive paths and call functions
 

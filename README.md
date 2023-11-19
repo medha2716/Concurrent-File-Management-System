@@ -20,3 +20,5 @@ also when delete/create/write/copy, read and file details cannot happen. impleme
 
 - only allowed to read file or read details when server down
 - not allowing copy from either for now
+
+- write name of folder that doesnt exist as part of file structure in ss2 and then use copy file dir with that name as destpath
