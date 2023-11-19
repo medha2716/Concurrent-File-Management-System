@@ -27,7 +27,25 @@ typedef struct paths_src_dest
     char path2[PATH_MAX];
 } paths_src_dest;
 
+#define DEAD 0
+#define ALIVE 1
 
+#define READ_ONLY 2
+#define ALL 3
+
+typedef struct storage_server_data
+{
+    int nm_port;
+    int client_port;
+    int ss_index;
+    int backup1_index;
+    int backup2_index;
+    int status;
+} storage_server_data;
+
+storage_server_data storage_server_array[67000];
+struct TrieNode *ss_root;
+int storage_servers_connected;
 
 char *ip = "127.0.0.1";
 int port = 5566; // SS KNOWS PORT NUMBER OF NM server
@@ -35,8 +53,6 @@ int port = 5566; // SS KNOWS PORT NUMBER OF NM server
 int server_sock;
 struct sockaddr_in server_addr;
 socklen_t addr_size;
-
-int storage_servers_connected;
 
 void create_file_dir(int ss_port, char file_or_dir, char *path)
 {
@@ -380,8 +396,113 @@ void copy_file_dir_nm_self(int ss_port, char *srcPath, char *destPath)
     close(sock);
     printf("Disconnected from the storage server with port %d.\n", ss_port);
 }
+
+char **tokenize_paths(char *acc_paths_string)
+{
+
+    int no_of_tokens = 0;
+    int tokens_array_size = MAX_NO_PATHS;                       // initial assumption for no of tokens
+    char **tokens = malloc(tokens_array_size * sizeof(char *)); // array of tokens
+
+    char *delimiters = "\n";
+    char *token = strtok(acc_paths_string, delimiters);
+
+    while (token != NULL)
+    {
+        tokens[no_of_tokens] = token;
+        no_of_tokens++;
+
+        if (no_of_tokens >= tokens_array_size)
+        {
+            tokens_array_size = (int)(tokens_array_size * 2);
+            tokens = realloc(tokens, tokens_array_size * sizeof(char *));
+        }
+
+        token = strtok(NULL, delimiters);
+    }
+
+    tokens[no_of_tokens] = NULL;
+    return tokens;
+}
+
+void store_in_array(int index, int port_nm, int port_client, int backup1_idx, int backup2_idx) // should ideally do 67000 se mod
+{
+    storage_server_array[index].ss_index = index; // made array 1 indexed
+    storage_server_array[index].client_port = port_client;
+    storage_server_array[index].nm_port = port_nm;
+    storage_server_array[index].backup1_index = backup1_idx;
+    storage_server_array[index].backup2_index = backup2_idx;
+    storage_server_array[index].status = ALIVE;
+    return;
+}
+
+void getPreviousDirectory(const char *path, char *previousDir)
+{
+    // Find the last occurrence of '/'
+    const char *lastSlash = strrchr(path, '/');
+
+    if (lastSlash != NULL)
+    {
+        // Calculate the length of the previous directory
+        size_t length = lastSlash - path;
+
+        // Copy the previous directory to the output buffer
+        strncpy(previousDir, path, length);
+        previousDir[length] = '\0'; // Null-terminate the string
+    }
+    else
+    {
+        // No '/' found, the input is likely just a file name
+        strcpy(previousDir, ".");
+    }
+}
+
+void find_ports(int ss_idx, int *permission, int *ss_port_nm)
+{
+
+    if (ss_idx > 0)
+    {
+        printf(GRN);
+        printf("Storage server found!\n"); // defie this error in error code
+        printf(RST);
+
+        if (storage_server_array[ss_idx].status == ALIVE)
+        {
+
+            *ss_port_nm = storage_server_array[ss_idx].nm_port;
+        }
+        else if (storage_server_array[ss_idx].backup1_index > 0)
+        {
+            if (storage_server_array[storage_server_array[ss_idx].backup1_index].status == ALIVE)
+            {
+
+                *ss_port_nm = storage_server_array[storage_server_array[ss_idx].backup1_index].nm_port;
+
+                *permission = READ_ONLY;
+            }
+        }
+        else if (storage_server_array[ss_idx].backup2_index > 0)
+        {
+            if (storage_server_array[storage_server_array[ss_idx].backup2_index].status == ALIVE)
+            {
+
+                *ss_port_nm = storage_server_array[storage_server_array[ss_idx].backup2_index].nm_port;
+                *permission = READ_ONLY;
+            }
+        }
+        else
+        {
+            printf(RED);
+            printf("Storage Server is Down. There are no backups.\n");
+            printf(RST);
+        }
+    }
+    return;
+}
 int main()
 {
+    ss_root = createNode(); // to store servers
+
     char buffer[1024];
     int n;
     storage_servers_connected = 0;
@@ -436,15 +557,16 @@ int main()
             // for each storage server different thread?
             storage_servers_connected++;
 
-            printf("[+]New Storage Server discovered/Change discovered in already stored servers.\n");
+            printf("[+]New Storage Server discovered.\n");
 
             send_nm_init struct_received;
             int check = recv(ss_sock, &struct_received, sizeof(struct_received), 0);
             printf("Struct Received!\n");
             printf("Accessible Paths:\n%s", struct_received.accessible_paths);
+
             printf("IP port: %s\n", struct_received.ip);
             printf("Port for NM connection: %d\n", struct_received.port_nm);
-            printf("Port for ss connection: %d\n", struct_received.port_ss);
+            printf("Port for client interaction: %d\n", struct_received.port_ss);
 
             if (check >= 0) // struct received
             {
@@ -464,6 +586,58 @@ int main()
             // store new ss data ... in such a way that search is easy
             // Efficient Search: Optimize the search process employed by the Naming Server when serving client requests. Avoid linear searches and explore more efficient data structures such as Tries and Hashmaps to swiftly identify the correct Storage Server (SS) for a given request. This optimization enhances response times, especially in systems with a large number of files and folders.
             // LRU Caching: Implement LRU (Least Recently Used) caching for recent searches. By caching recently accessed information, the NM can expedite subsequent requests for the same data, further improving response times and system efficiency.
+
+            // need to get
+            char **accessible_paths_individual = tokenize_paths(struct_received.accessible_paths);
+            int ss_num = searchPath(ss_root, accessible_paths_individual[0]); // search first path in accessible paths
+
+            if (ss_num > 0 && struct_received.port_nm == storage_server_array[ss_num].nm_port)
+            {
+                printf("Storage Server %d is back up!", ss_num); // this is only possible when server comes back up
+                storage_server_array[ss_num].status = ALIVE;
+            }
+            else // new server so add paths to trie
+            {
+                // if more than 2 ss then store paths in them and send their index
+                store_in_array(storage_servers_connected, struct_received.port_nm, struct_received.port_ss, -1, -1);
+
+                int i = 0;
+                while (accessible_paths_individual[i] != NULL)
+                {
+                    insertPath(ss_root, accessible_paths_individual[i], storage_servers_connected);
+                    // printf("ss_num %d path %s port %d\n",searchPath(ss_root,accessible_paths_individual[i]),accessible_paths_individual[i],storage_server_array[searchPath(ss_root,accessible_paths_individual[i])].nm_port);
+                    i++;
+                }
+            }
+        }
+        else if (ss_or_client == 3)
+        {
+            storage_servers_connected++;
+
+            printf("[+]Change discovered in already connected storage servers.\n");
+
+            send_nm_init struct_received;
+            int check = recv(ss_sock, &struct_received, sizeof(struct_received), 0);
+            printf("Struct Received!\n");
+            printf("Accessible Paths:\n%s", struct_received.accessible_paths);
+            printf("IP port: %s\n", struct_received.ip);
+            printf("Port for NM connection: %d\n", struct_received.port_nm);
+            printf("Port for client interaction: %d\n", struct_received.port_ss);
+
+            if (check >= 0) // struct received
+            {
+                bzero(buffer, 1024);
+                strcpy(buffer, "THIS IS NM SERVER, SS META DATA RECEIVED.");
+                printf("NM server sending message: %s ..\n", buffer);
+                send(ss_sock, buffer, strlen(buffer), 0);
+            }
+            else
+            {
+                printf("[-] 43: Receiving Error.\n");
+            }
+
+            close(ss_sock);
+            printf("[+]SS disconnected.\n\n");
         }
         else if (ss_or_client == 2) // it is a client
         {
@@ -471,14 +645,13 @@ int main()
             char *response = "CLIENT COMMAND RECEIVED";
             send(ss_sock, response, sizeof(response), 0);
 
-            printf("NM Server: %s\n", response);
+            printf("\nNM Server: %s\n", response);
 
             char ch;
             paths_src_dest struct_received;
             recv(ss_sock, &struct_received, sizeof(struct_received), 0);
 
-            ch=struct_received.ch;
-            
+            ch = struct_received.ch;
 
             int ss_port_client = 0; // if not found send 0
             int ss_port_nm = 0;
@@ -489,106 +662,154 @@ int main()
             int ss1_nm = 0;
             int ss2_nm = 0;
 
-            // if (!storage_servers_connected)
-            // {
-            //     printf(RED);
-            //     printf("No storage servers connected to the NM server at the moment\n"); //define this error in search code
-            //     printf(RST);
-            // }
-
             char buffersend[1024];
             char path1[PATH_MAX];
 
+            int ss_num1;
+            int ss_num2;
             if (ch != 'c')
             {
-                strcpy(path1,struct_received.path1);
+                strcpy(path1, struct_received.path1);
                 printf(CSTM2);
-                printf("Path: %s\n\n", path1);
+                printf("Path received: %s\n", path1);
                 printf(RST);
+                if ((ch != 'f') && (ch != 'd'))
+                    ss_num1 = searchPath(ss_root, path1);
+                else
+                {
+                    char previousDir[PATH_MAX]; // Adjust the buffer size as needed
+                    getPreviousDirectory(path1, previousDir);
+                    printf(YEL);
+                    printf("Path to search: %s\n", previousDir);
+                    printf(RST);
+                    ss_num1 = searchPath(ss_root, previousDir);
+                }
             }
             else
             {
                 printf(CSTM2);
                 printf("Paths: %s %s\n\n", struct_received.path1, struct_received.path2);
                 printf(RST);
+                ss_num1 = searchPath(ss_root, struct_received.path1); // can also do whatever i do for f and d
+                ss_num2 = searchPath(ss_root, struct_received.path2);
             }
-            
-            //searchhhhhh
 
-            printf(GRN);
-            printf("Storage servers found!\n"); // defie this error in error code
-            printf(RST);
-            ss_port_client = 1234;
-            ss_port_nm = 1235;
+            // searchhhhhh
+            int permission = ALL;
+            if (ch != 'c')
+            {
+                if (ss_num1 > 0)
+                {
+                    printf(GRN);
+                    printf("Storage servers found!\n"); // defie this error in error code
+                    printf(RST);
 
-            ss1_nm = 1235;
-            ss2_nm = 2346; // 2345
+                    if (storage_server_array[ss_num1].status == ALIVE)
+                    {
+                        ss_port_client = storage_server_array[ss_num1].client_port;
+                        ss_port_nm = storage_server_array[ss_num1].nm_port;
+                    }
+                    else if (storage_server_array[ss_num1].backup1_index > 0)
+                    {
+                        if (storage_server_array[storage_server_array[ss_num1].backup1_index].status == ALIVE)
+                        {
+                            ss_port_client = storage_server_array[storage_server_array[ss_num1].backup1_index].client_port;
+                            ss_port_nm = storage_server_array[storage_server_array[ss_num1].backup1_index].nm_port;
+
+                            permission = READ_ONLY;
+                        }
+                    }
+                    else if (storage_server_array[ss_num1].backup2_index > 0)
+                    {
+                        if (storage_server_array[storage_server_array[ss_num1].backup2_index].status == ALIVE)
+                        {
+                            ss_port_client = storage_server_array[storage_server_array[ss_num1].backup2_index].client_port;
+                            ss_port_nm = storage_server_array[storage_server_array[ss_num1].backup2_index].nm_port;
+                            permission = READ_ONLY;
+                        }
+                    }
+                    else
+                    {
+                        printf(RED);
+                        printf("Storage Server is Down. There are no backups.\n");
+                        printf(RST);
+                    }
+                }
+            }
+            else
+            {
+                find_ports(ss_num1, &permission, &ss1_nm); // nm means nm server, num is ss number
+                find_ports(ss_num2, &permission, &ss2_nm);
+            }
+
+            // ss1_nm = 1235;
+            // ss2_nm = 2346; // 2345
+            // printf("%d %d\n",ss1_nm,ss2_nm);
 
             bzero(buffersend, 1024);
-            if ((ss_port_nm != 0)&&ch!='c')
+
+            if ((permission == READ_ONLY) && (ch != 'r') && (ch != 't')) // do for c
+            {
+                strcpy(buffersend, "Storage server found but Read Only Path\n");
+                send(ss_sock, buffersend, sizeof(buffersend), 0);
+                continue;
+            }
+            if ((ss_port_nm != 0) && ch != 'c')
             {
                 strcpy(buffersend, "Storage server found\n");
                 send(ss_sock, buffersend, sizeof(buffersend), 0);
             }
-            else if((ch=='c')&&(ss1_nm!=0)&&(ss2_nm!=0))
+            else if ((ch == 'c') && (ss1_nm != 0) && (ss2_nm != 0))
             {
                 strcpy(buffersend, "Storage server found\n");
                 send(ss_sock, buffersend, sizeof(buffersend), 0);
             }
             else
             {
-                strcpy(buffersend, "44: Storage server not found\n");
+                strcpy(buffersend, "Storage server not found\n");
                 send(ss_sock, buffersend, sizeof(buffersend), 0);
                 continue;
             }
 
-            if (ss_port_nm != 0)
+            if (((ss_port_nm != 0) && (ch != 'c')) || ((ch == 'c') && (ss1_nm != 0) && (ss2_nm != 0)))
             {
-                if ((ch == 'r') || (ch == 't') || (ch == 'w'))
+                if ((ch == 'r') || (ch == 't') || (ch == 'w')) // no change to file structure!! this is why nm didnt need stop ack
                 {
                     send(ss_sock, &ss_port_client, sizeof(ss_port_client), 0);
                     printf("Port sent to client for SS connection: %d\n", ss_port_client);
                     printf("\n");
                 }
-                else
+                else // change file structureeeee 
                 {
                     // receive paths and call functions
 
                     if ((ch == 'f') || (ch == 'd'))
+                    {
+                        printf("Creating...\n");
                         create_file_dir(ss_port_nm, ch, path1); //"dir1/dir3/file.txt"
+                        // if successful
+                        insertPath(ss_root, path1, ss_num1);
+                    }
                     else if ((ch == 'F') || (ch == 'D'))
+                    {
                         delete_file_dir(ss_port_nm, ch, path1); //"dir1/dir3/file.txt"
+                        // if successful
+                        removee(ss_root, path1, 0);
+                    }
                     else if (ch == 'c')
                     {
+                        // printf("hi");
                         if (ss1_nm == ss2_nm)
+                        {
                             copy_file_dir_nm_self(ss1_nm, struct_received.path1, struct_received.path2);
+                        }
                         else
-                            {
-                                copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2);
-                            }
+                        {
+                            copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2);
+                        }
                     }
                 }
             }
-
-            // create_file_dir(1235, 'f', "dir1/dir3/file.txt"); // the last 2 arguments will be user input and sent from client to nm server; get port from the trie/hashmap
-            // printf("\n");
-
-            // create_file_dir(1235, 'd', "dir1/dir2");
-            // printf("\n");
-
-            // delete_file_dir(1235,'F', "main_dir/dir1/file.txt");
-            // printf("\n");
-
-            // delete_file_dir(1235,'D', "dir1/dir2");
-            // printf("\n");
-
-            // copy_file_dir_nm(1235, "main_dir", "dest");
-            // printf("\n");
-
-            // copy_file_dir_nm_self(1235, "main_dir", "dest");
-            // printf("\n");
-
-            // copy_file_dir();
         }
     }
 

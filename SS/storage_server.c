@@ -475,7 +475,7 @@ void *update_file_structure_nm()
             printf("Connected to the NM server.\n");
 
             // send to nfs server that it is a storage server that wants to update its file structure
-            int ss_or_client = 1;
+            int ss_or_client = 3;
             send(sock, &ss_or_client, sizeof(ss_or_client), 0);
 
             strcpy(struct_to_send.accessible_paths, temp_to_store_current_paths);
@@ -601,12 +601,12 @@ int main()
     pthread_t connection_for_client_interactions;
     pthread_create(&connection_for_client_interactions, NULL, &client_interactions, &port_client);
 
-    pthread_t update_file_dir;
-    pthread_create(&update_file_dir, NULL, &update_file_structure_nm, NULL);
+    // pthread_t update_file_dir;
+    // pthread_create(&update_file_dir, NULL, &update_file_structure_nm, NULL);
 
     pthread_join(connection_for_nm_commands, NULL);
     pthread_join(connection_for_client_interactions, NULL);
-    pthread_join(update_file_dir, NULL);
+    // pthread_join(update_file_dir, NULL);
 
     return 0;
 }

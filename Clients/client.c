@@ -198,7 +198,12 @@ int execute1()
   bzero(buffersend, 1024);
   recv(sock, buffersend, sizeof(buffersend), 0);
 
-  if (strcmp(buffersend, "203: Storage server not found\n") == 0)
+
+  printf(MAG);
+  printf("%s\n",buffersend);
+  printf(RST);
+
+  if (strcmp(buffersend, "Storage server found\n") != 0)
     return -1;
 
   int ss_port;
@@ -436,8 +441,17 @@ int execute()
     bzero(buffersend, 1024);
     recv(sock, buffersend, sizeof(buffersend), 0);
 
-    if (strcmp(buffersend, "203: Storage server not found\n") == 0)
+    printf(MAG);
+    printf("%s\n",buffersend);
+    printf(RST);
+
+    if (strcmp(buffersend, "Storage server found\n") != 0)
+    {
+      
+      close(sock);
+      printf("Disconnected from the NM server\n\n");
       return -1;
+    }  
   }
   else
   {
@@ -454,8 +468,13 @@ int execute()
     bzero(buffersend, 1024);
     recv(sock, buffersend, sizeof(buffersend), 0);
 
-    if (strcmp(buffersend, "203: Storage server not found\n") == 0)
+    if (strcmp(buffersend, "Storage server found\n") != 0)
+    {
+      
+      close(sock);
+      printf("Disconnected from the NM server\n\n");
       return -1;
+    }  
   }
 
   close(sock);
@@ -468,7 +487,6 @@ int main()
 
   do
   {
-
     printf("\033[1;35m"); // Set text color to bright magenta
     printf("\nFile and Folder Operations Menu\n");
     printf("\033[38;2;255;192;203m"); // Light Pink
