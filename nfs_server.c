@@ -518,14 +518,14 @@ void copy_one_ss_into_another(int src_idx, int dest_idx)
 
     printf("%d %d\n", src_port, dest_port); // till here perfection
 
+    printf("%s\n",storage_server_array[src_idx].paths);
+
     char **accessible_paths_individual = tokenize_paths(storage_server_array[src_idx].paths);
 
     while (accessible_paths_individual[i] != NULL)
     {
         printf("%s\n", accessible_paths_individual[i]);
-        char send[PATH_MAX];
-
-        copy_file_dir_nm(src_port, dest_port, accessible_paths_individual[i], "ss1");
+        copy_file_dir_nm(src_port, dest_port, accessible_paths_individual[i], accessible_paths_individual[i]);
         i++;
     }
 }
@@ -621,6 +621,9 @@ int main()
             // LRU Caching: Implement LRU (Least Recently Used) caching for recent searches. By caching recently accessed information, the NM can expedite subsequent requests for the same data, further improving response times and system efficiency.
 
             // need to get
+            char temp_paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
+            strcpy(temp_paths,struct_received.accessible_paths); //as we are doing strtok but need to copy accessible paths  string into array struct
+
             char **accessible_paths_individual = tokenize_paths(struct_received.accessible_paths);
             int ss_num = searchPath(ss_root, accessible_paths_individual[0]); // search first path in accessible paths
 
@@ -633,7 +636,8 @@ int main()
             {
                 // if more than 2 ss then store paths in them and send their index
                 store_in_array(storage_servers_connected, struct_received.port_nm, struct_received.port_client, -1, -1);
-                strcpy(storage_server_array[storage_servers_connected].paths, struct_received.accessible_paths);
+                strcpy(storage_server_array[storage_servers_connected].paths, temp_paths);
+                
 
                 int i = 0;
                 while (accessible_paths_individual[i] != NULL)
