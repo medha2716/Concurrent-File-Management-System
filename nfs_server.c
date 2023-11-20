@@ -216,9 +216,6 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
     addr2.sin_port = port2;
     addr2.sin_addr.s_addr = inet_addr(ip);
 
-    connect(sock2, (struct sockaddr *)&addr2, sizeof(addr2));
-    printf("Connected to the storage server 2.\n");
-
     bzero(buffer, 1024);
     strcpy(buffer, "HELLO, THIS IS NM SERVER.");
     printf("NM server: %s\n", buffer);
@@ -229,12 +226,27 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
     printf("SS server: %s\n", buffer);
 
     char c = 'p';
-    send(sock1, &c, sizeof(c), 0);
+    send(sock1, (char *)&c, sizeof(c), 0);
 
     char ack_start[10];
-    recv(sock1, ack_start, sizeof(ack_start), 0);
-    if (strcmp(ack_start, "START") == 0)
+
+    if (recv(sock1, ack_start, sizeof(ack_start), 0) < 0)
+        printf("receive start ack error\n");
+    else
         printf("START ack received\n");
+
+    bzero(buffer, 1024);
+    strcpy(buffer, srcPath);
+    printf("Sent: %s\n", buffer);
+    send(sock1, (char **)&buffer, sizeof(buffer), 0);
+    recv(sock1, &ack, sizeof(ack), 0);
+    // else
+    //     printf("%s\n",ack_start);
+
+    // if (strcmp(ack_start, "START") == 0)
+    //     printf("START ack received\n");
+    connect(sock2, (struct sockaddr *)&addr2, sizeof(addr2));
+    printf("Connected to the storage server 2.\n");
 
     bzero(buffer, 1024);
     strcpy(buffer, "HELLO, THIS IS NM SERVER.");
@@ -246,20 +258,14 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
     printf("SS server: %s\n", buffer);
 
     c = 'c';
-    send(sock2, &c, sizeof(c), 0);
+    send(sock2, (char *)&c, sizeof(c), 0);
 
-    recv(sock2, ack_start, sizeof(ack_start), 0);
-    if (strcmp(ack_start, "START") == 0)
+    if (recv(sock2, ack_start, sizeof(ack_start), 0) < 0)
+        printf("receive start ack error\n");
+    else
         printf("START ack received\n");
 
     // start
-
-        bzero(buffer, 1024);
-    strcpy(buffer, srcPath);
-    printf("Sent: %s\n", buffer);
-    send(sock1, &buffer, sizeof(buffer), 0);
-    recv(sock1, &ack, sizeof(ack), 0);
-    
 
     bzero(buffer, 1024);
     strcpy(buffer, destPath);
@@ -510,16 +516,16 @@ void copy_one_ss_into_another(int src_idx, int dest_idx)
     int src_port = storage_server_array[src_idx].nm_port;
     int dest_port = storage_server_array[dest_idx].nm_port;
 
-    printf("%d %d\n",src_port,dest_port); //till here perfection
+    printf("%d %d\n", src_port, dest_port); // till here perfection
 
     char **accessible_paths_individual = tokenize_paths(storage_server_array[src_idx].paths);
 
     while (accessible_paths_individual[i] != NULL)
     {
-        printf("%s\n",accessible_paths_individual[i]);
+        printf("%s\n", accessible_paths_individual[i]);
         char send[PATH_MAX];
-        strcpy(send,accessible_paths_individual[i]);
-        copy_file_dir_nm(src_port, dest_port, send, send);
+
+        copy_file_dir_nm(src_port, dest_port, accessible_paths_individual[i], "ss1");
         i++;
     }
 }
@@ -627,7 +633,7 @@ int main()
             {
                 // if more than 2 ss then store paths in them and send their index
                 store_in_array(storage_servers_connected, struct_received.port_nm, struct_received.port_client, -1, -1);
-                strcpy(storage_server_array[storage_servers_connected].paths,struct_received.accessible_paths);
+                strcpy(storage_server_array[storage_servers_connected].paths, struct_received.accessible_paths);
 
                 int i = 0;
                 while (accessible_paths_individual[i] != NULL)
@@ -638,11 +644,10 @@ int main()
                 }
             }
 
-            // if(storage_servers_connected==2)
-            // { 
-            //     printf("hi\n");
-            //     copy_one_ss_into_another(1, 2);
-            // }
+            if (storage_servers_connected == 2)
+            {
+                copy_one_ss_into_another(1, 2);
+            }
         }
         else if (ss_or_client == 3)
         {
@@ -701,8 +706,6 @@ int main()
 
             int ss_num1;
             int ss_num2;
-
-            
 
             if (ch != 'c')
             {
