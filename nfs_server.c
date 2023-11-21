@@ -196,10 +196,11 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
 
     // const char *srcPath = argv[1];
     // const char *destPath = argv[2];
-
+    
     char *ip = "127.0.0.1";
     int port1 = ss_port;
     int ack;
+    printf("%d %d\n",port1,port2);
 
     int sock1; // copy from
     struct sockaddr_in addr1;
@@ -216,28 +217,13 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
 
     memset(&addr1, '\0', sizeof(addr1));
     addr1.sin_family = AF_INET;
-    addr1.sin_port = port1;
+    addr1.sin_port = htons(port1);
     addr1.sin_addr.s_addr = inet_addr(ip);
 
     connect(sock1, (struct sockaddr *)&addr1, sizeof(addr1));
     printf("Connected to the storage server 1.\n");
 
     // int port2 = 2345; // copy 2
-    int sock2;
-    struct sockaddr_in addr2;
-
-    sock2 = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock2 < 0)
-    {
-        perror("[-] 40: Socket error");
-        exit(1);
-    }
-    printf("[+]TCP server socket created.\n");
-
-    memset(&addr2, '\0', sizeof(addr2));
-    addr2.sin_family = AF_INET;
-    addr2.sin_port = port2;
-    addr2.sin_addr.s_addr = inet_addr(ip);
 
     bzero(buffer, 1024);
     strcpy(buffer, "HELLO, THIS IS NM SERVER.");
@@ -268,6 +254,22 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
 
     // if (strcmp(ack_start, "START") == 0)
     //     printf("START ack received\n");
+    int sock2;
+    struct sockaddr_in addr2;
+
+    memset(&addr2, '\0', sizeof(addr2));
+    addr2.sin_family = AF_INET;
+    addr2.sin_port = htons(port2);
+    addr2.sin_addr.s_addr = inet_addr(ip);
+
+    sock2 = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock2 < 0)
+    {
+        perror("[-] 40: Socket error");
+        exit(1);
+    }
+    printf("[+]TCP server socket created.\n");
+
     connect(sock2, (struct sockaddr *)&addr2, sizeof(addr2));
     printf("Connected to the storage server 2.\n");
 
@@ -560,7 +562,7 @@ void *ping_ss(void *arg)
     int ss_port = storage_server_array[index].nm_port;
     while (1)
     {
-        sleep(8);
+        
 
         char *ip = "127.0.0.1";
 
@@ -618,6 +620,8 @@ void *ping_ss(void *arg)
         }
 
         close(sock);
+
+        sleep(8);
     }
 
     return NULL;
@@ -744,10 +748,10 @@ int main()
                 }
             }
 
-            if (storage_servers_connected == 3)
-            {
-                copy_one_ss_into_another(1, 2);
-            }
+            // if (storage_servers_connected == 3)
+            // {
+            //     copy_one_ss_into_another(1, 2);
+            // }
             pthread_create(&nm_thread[i++], NULL, &ping_ss, &storage_servers_connected);
         }
         else if (ss_or_client == 3)

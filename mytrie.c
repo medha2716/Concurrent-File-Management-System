@@ -30,6 +30,22 @@ void insertPath(struct TrieNode *root, const char *path, int s)
 {
     struct TrieNode *current = root;
     int len = strlen(path);
+        char* dup=strdup(path);
+         char tmp[1024];
+        bzero(tmp,1024);
+     for(int i=0;i<strlen(dup);i++){
+        if(dup[i]=='/'){
+        insertproperly(root,tmp,s);
+        }
+        tmp[i]=dup[i];
+     }
+     insertproperly(root,path,s);
+}
+
+void insertproperly(struct TrieNode *root, const char *path, int s)
+{
+    struct TrieNode *current = root;
+    int len = strlen(path);
    
     for (int i = 0; i < len; i++)
     {
