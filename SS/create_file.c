@@ -16,6 +16,7 @@ int create_file(char* relativePath)
         if (!S_ISDIR(sb.st_mode))
         {
             printf("File exists\n");
+            return FILE_EXISTS;
         }
     }
     else
@@ -29,8 +30,8 @@ int create_file(char* relativePath)
         }
         else
         {
-            perror("132: Cannot create file");
-            return 1;
+            printf("132: Cannot create file");
+            return FILE_CREATE_ERROR;
         }
     }
 

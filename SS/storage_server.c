@@ -24,16 +24,26 @@ send_nm_init struct_to_send;
 pthread_t client_thread[MAX_CLIENTS];
 pthread_t nm_threads[5];
 
-char* check_which_error(int error_code)
-{
+char* check_which_error(int error_code) {
     switch (error_code) {
-        case DIR_EXISTS_ALREADY :
+        case DIR_EXISTS_ALREADY:
             return "DIRECTORY EXISTS ALREADY";
-        case DIR_CREATION_FAILED :
+        case DIR_CREATION_FAILED:
             return "DIRECTORY CREATION FAILED";
         case MAX_PATH_LENGTH_EXCEEDED:
             return "MAXIMUM PATH LENGTH EXCEEDED";
-        // Add more cases as needed
+        case FILE_EXISTS:
+            return "FILE EXISTS";
+        case FILE_CREATE_ERROR:
+            return "FILE CREATION ERROR";
+        case DELETE_FILE_ERROR:
+            return "DELETE FILE ERROR";
+        case FILE_DOES_NOT_EXIST:
+            return "FILE DOES NOT EXIST";
+        case DIR_DELETION_ERROR:
+            return "DIRECTORY DELETION ERROR";
+        case DIR_DOES_NOT_EXIST:
+            return "DIRECTORY DOES NOT EXIST";
         default:
             return "Unknown error";
     }

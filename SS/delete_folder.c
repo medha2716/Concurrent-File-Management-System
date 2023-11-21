@@ -75,10 +75,16 @@ int delete_dir(char *relativePath)
         if (deletefolder(relativePath) == 1) // rmdir
             printf("Deleted successfully\n");
         else
+        {
             printf("142: Unable to delete the directory\n");
+            return DIR_DELETION_ERROR;
+        }    
     }
     else
+    {
         printf("143: Directory doesn't exist\n");
+        return DIR_DOES_NOT_EXIST;
+    }    
 
     if (stat(fullPath, &sb) == 0)
     {

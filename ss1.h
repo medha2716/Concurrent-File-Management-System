@@ -104,3 +104,9 @@ int check(const char *path, struct store *lru);
 #define DIR_EXISTS_ALREADY 50
 #define DIR_CREATION_FAILED 51
 #define MAX_PATH_LENGTH_EXCEEDED 52
+#define FILE_EXISTS 53
+#define FILE_CREATE_ERROR 54
+#define DELETE_FILE_ERROR 55
+#define FILE_DOES_NOT_EXIST 56
+#define DIR_DELETION_ERROR 57
+#define DIR_DOES_NOT_EXIST 58

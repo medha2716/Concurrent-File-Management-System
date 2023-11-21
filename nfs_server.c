@@ -106,6 +106,7 @@ int create_file_dir(int ss_port, char file_or_dir, char *path)
     int flag_sucess=0;
     bzero(ack_stop,1000);
     recv(sock, ack_stop, sizeof(ack_stop), 0);
+    printf(LIGHT_PINK);
     if (strcmp(ack_stop, "STOP") == 0)
     {
         printf("STOP ack received\n");
@@ -113,13 +114,14 @@ int create_file_dir(int ss_port, char file_or_dir, char *path)
     }
     else
         printf("%s\n",ack_stop);
+    printf(RST);
 
     close(sock);
-    printf("Disconnected from the storage server with port %d.\n", ss_port);
+    printf("Disconnected from the storage server with port %d.\n\n\n", ss_port);
     return flag_sucess;
 }
 
-void delete_file_dir(int ss_port, char file_or_dir, char *path)
+int delete_file_dir(int ss_port, char file_or_dir, char *path)
 {
 
     char *ip = "127.0.0.1";
@@ -164,13 +166,24 @@ void delete_file_dir(int ss_port, char file_or_dir, char *path)
 
     send(sock, path, strlen(path), 0);
 
-    char ack_stop[10];
+    char ack_stop[1000];
+    int flag_sucess=0;
+    bzero(ack_stop,1000);
     recv(sock, ack_stop, sizeof(ack_stop), 0);
+
+    printf(LIGHT_PINK);
     if (strcmp(ack_stop, "STOP") == 0)
+    {
         printf("STOP ack received\n");
+        flag_sucess=1;
+    }
+    else
+        printf("%s\n",ack_stop);
+    printf(RST);
 
     close(sock);
-    printf("Disconnected from the storage server with port %d.\n", ss_port);
+    printf("Disconnected from the storage server with port %d.\n\n\n", ss_port);
+    return flag_sucess;
 }
 
 void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
@@ -342,11 +355,11 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
     char ack_stop[10];
     recv(sock1, ack_stop, sizeof(ack_stop), 0);
     if (strcmp(ack_stop, "STOP") == 0)
-        printf("STOP ack received\n");
+        printf("STOP ack received\n\n\n");
 
     recv(sock2, ack_stop, sizeof(ack_stop), 0);
     if (strcmp(ack_stop, "STOP") == 0)
-        printf("STOP ack received\n");
+        printf("STOP ack received\n\n\n");
 
     close(sock1);
     close(sock2);
@@ -413,7 +426,7 @@ void copy_file_dir_nm_self(int ss_port, char *srcPath, char *destPath)
         printf("STOP ack received\n");
 
     close(sock);
-    printf("Disconnected from the storage server with port %d.\n", ss_port);
+    printf("Disconnected from the storage server with port %d.\n\n\n", ss_port);
 }
 
 char **tokenize_paths(char *acc_paths_string)
@@ -932,9 +945,8 @@ int main()
                     }
                     else if ((ch == 'F') || (ch == 'D'))
                     {
-                        delete_file_dir(ss_port_nm, ch, path1); //"dir1/dir3/file.txt"
-                        // if successful
-                        removee(ss_root, path1, 0);
+                        if(delete_file_dir(ss_port_nm, ch, path1))
+                            removee(ss_root, path1, 0);
                     }
                     else if (ch == 'c')
                     {

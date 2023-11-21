@@ -26,10 +26,16 @@ int delete_file(char *relativePath)
     if (unlink(relativePath) == 0)
         printf("Deleted successfully\n");
     else
-        printf("140: Unable to delete the file\n");
+        {
+            printf("140: Unable to delete the file\n");
+            return DELETE_FILE_ERROR;
+        }
     }
     else
-        printf("414: File doesn't exist\n");
+        {
+            printf("414: File doesn't exist\n");
+            return FILE_DOES_NOT_EXIST;
+        }
  
     return 0;
 }
