@@ -34,7 +34,7 @@ void intialize_log()
 	fwrite(history, sizeof(char), sizeof(history), fp);
 	fclose(fp);
 }
-void log_insert(char *log_request)
+void log_insert(char *log_request, char *port)
 {
     int bufsiz = 256;
 	intialize_log();
@@ -72,7 +72,7 @@ void log_insert(char *log_request)
 		}
 		--len;
 	}
-    // strcat(log_request, "\n");
+    strcat(log_request, port);
 	strcpy(history[len], log_request);
 	strcpy(history[len + 1], "%");
 	
