@@ -24,3 +24,5 @@ also when delete/create/write/copy, read and file details cannot happen. impleme
 - write name of folder that doesnt exist as part of file structure in ss2 and then use copy file dir with that name as destpath
 
 - paths entered: abc.txt file.txt, but file.txt must be passed as accessible path in ss2, may or may not exist in structure
+
+- so for redundancy right now i am copying into previous two servers if not down

@@ -10,8 +10,6 @@
 #include <pthread.h>
 #include <sys/types.h>
 
-
-
 #define PATH_MAX 1024
 #define BUFFER_SIZE 1024
 
@@ -25,10 +23,10 @@ typedef struct chunk
                   // int ack; // the byte number that the receiver expects to receive next
 } chunk;
 
-int directoryExists( char *path);
-void get_accessible_path_present( char *relativePath);
+int directoryExists(char *path);
+void get_accessible_path_present(char *relativePath);
 
-int create_file(char* relativePath);
+int create_file(char *relativePath);
 int create_dirs(char *relativePath);
 
 int delete_file(char *relativePath);
@@ -39,10 +37,10 @@ void copy_ss2(int client_sock);
 
 int self_copy(char *srcPath, char *destPath);
 
-char* file_details(char *filename);
+char *file_details(char *filename);
 
-int read_file(int sock, char* path);
-void write_file(int sock,char* path);
+int read_file(int sock, char *path);
+void write_file(int sock, char *path);
 
 #define MAX_LENGTH_ACC_PATHS_ONE_SS 20000
 #define MAX_NO_PATHS 10
@@ -58,13 +56,17 @@ void write_file(int sock,char* path);
 #define MAG "\033[35m"
 #define CYN "\033[36m"
 #define WHT "\033[37m"
-#define LIGHT_PINK      "\x1b[38;5;207m"
-#define MEDIUM_PINK     "\x1b[38;5;206m"
-#define DARK_PINK       "\x1b[38;5;205m"
-#define HOT_PINK        "\x1b[38;5;198m"
-#define DEEP_PINK       "\x1b[38;5;199m"
+#define LIGHT_PINK "\x1b[38;5;207m"
+#define MEDIUM_PINK "\x1b[38;5;206m"
+#define DARK_PINK "\x1b[38;5;205m"
+#define HOT_PINK "\x1b[38;5;198m"
+#define DEEP_PINK "\x1b[38;5;199m"
 
 // Custom color codes
 #define CSTM1 "\033[38;5;200m"
 #define CSTM2 "\033[38;5;220m"
 
+// error code
+#define DIR_EXISTS_ALREADY 50
+#define DIR_CREATION_FAILED 51
+#define MAX_PATH_LENGTH_EXCEEDED 52

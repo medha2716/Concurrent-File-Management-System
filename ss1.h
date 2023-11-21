@@ -100,3 +100,7 @@ struct store
 
 int check(const char *path, struct store *lru);
 
+// error code
+#define DIR_EXISTS_ALREADY 50
+#define DIR_CREATION_FAILED 51
+#define MAX_PATH_LENGTH_EXCEEDED 52

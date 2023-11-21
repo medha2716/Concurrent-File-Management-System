@@ -57,7 +57,7 @@ socklen_t addr_size;
 
 pthread_t nm_thread[30];
 
-void create_file_dir(int ss_port, char file_or_dir, char *path)
+int create_file_dir(int ss_port, char file_or_dir, char *path)
 {
 
     char *ip = "127.0.0.1";
@@ -102,13 +102,21 @@ void create_file_dir(int ss_port, char file_or_dir, char *path)
 
     send(sock, path, strlen(path), 0);
 
-    char ack_stop[10];
+    char ack_stop[1000];
+    int flag_sucess=0;
+    bzero(ack_stop,1000);
     recv(sock, ack_stop, sizeof(ack_stop), 0);
     if (strcmp(ack_stop, "STOP") == 0)
+    {
         printf("STOP ack received\n");
+        flag_sucess=1;
+    }
+    else
+        printf("%s\n",ack_stop);
 
     close(sock);
     printf("Disconnected from the storage server with port %d.\n", ss_port);
+    return flag_sucess;
 }
 
 void delete_file_dir(int ss_port, char file_or_dir, char *path)
@@ -723,7 +731,7 @@ int main()
                 }
             }
 
-            if (storage_servers_connected == 2)
+            if (storage_servers_connected == 3)
             {
                 copy_one_ss_into_another(1, 2);
             }
@@ -919,9 +927,8 @@ int main()
                     if ((ch == 'f') || (ch == 'd'))
                     {
                         printf("Creating...\n");
-                        create_file_dir(ss_port_nm, ch, path1); //"dir1/dir3/file.txt"
-                        // if successful
-                        insertPath(ss_root, path1, ss_num1);
+                        if(create_file_dir(ss_port_nm, ch, path1))
+                            insertPath(ss_root, path1, ss_num1);
                     }
                     else if ((ch == 'F') || (ch == 'D'))
                     {

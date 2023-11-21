@@ -24,7 +24,20 @@ send_nm_init struct_to_send;
 pthread_t client_thread[MAX_CLIENTS];
 pthread_t nm_threads[5];
 
-
+char* check_which_error(int error_code)
+{
+    switch (error_code) {
+        case DIR_EXISTS_ALREADY :
+            return "DIRECTORY EXISTS ALREADY";
+        case DIR_CREATION_FAILED :
+            return "DIRECTORY CREATION FAILED";
+        case MAX_PATH_LENGTH_EXCEEDED:
+            return "MAXIMUM PATH LENGTH EXCEEDED";
+        // Add more cases as needed
+        default:
+            return "Unknown error";
+    }
+}
 void copy_ss2(int client_sock)
 {
     int ack;
@@ -270,18 +283,18 @@ void *nm_handle(void *param)
     char destPath[PATH_MAX];
     int ping;
     int ack;
-    
+    int l;
     switch (choice)
     {
     case 'f': // for creation of file
         bzero(buffer, 1024);
         recv(nm_client_sock, buffer, sizeof(buffer), 0);
-        int h = create_file(buffer);
+        l = create_file(buffer);
         break;
     case 'd': // for creation of dir
         bzero(buffer, 1024);
         recv(nm_client_sock, buffer, sizeof(buffer), 0);
-        int l = create_dirs(buffer);
+        l = create_dirs(buffer);
         break;
     case 'F': // for deletion of file
         bzero(buffer, 1024);
@@ -318,8 +331,15 @@ void *nm_handle(void *param)
         printf(RST);
         break;
     }
-
-    if (flag_success)
+    if((flag_success==1) && (l!=0))
+    {
+        char* ack_stop=check_which_error(l);
+        printf(MAG);
+        printf("Error Message Sent\n");
+        printf(RST);
+        send(nm_client_sock, ack_stop, strlen(ack_stop), 0);
+    }
+    else if (flag_success)
     {
         char *ack_stop = "STOP";
         printf("STOP ack sent\n");

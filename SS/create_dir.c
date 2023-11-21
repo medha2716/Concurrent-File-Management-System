@@ -52,38 +52,40 @@ void get_accessible_path_present(char *relativePath)
     printf("%s\n", base_path);
 }
 
-int create_dirs( char *relativePath)
+int create_dirs(char *relativePath)
 {
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
 
- 
     get_accessible_path_present(relativePath);
 
-    char fullPath[PATH_MAX]; 
+    char fullPath[PATH_MAX];
 
     // Combine current working directory and relative path
     if (directoryExists(relativePath))
     {
         printf("Directory already exists\n");
+        return DIR_EXISTS_ALREADY;
     }
     else
     {
         if (snprintf(fullPath, sizeof(fullPath), "%s/%s", cwd, relativePath) < sizeof(fullPath))
         {
-            
+
             if (mkdir(fullPath, S_IRWXU | S_IRWXG | S_IRWXO) == 0)
             {
                 printf("Directory created successfully.\n");
             }
             else
             {
-                perror("130: Directory creation failed"); 
+                printf("130: Directory creation failed");
+                return DIR_CREATION_FAILED;
             }
         }
         else
         {
-            perror("131: Path length too long");
+            printf("131: Path length too long");
+            return MAX_PATH_LENGTH_EXCEEDED;
         }
     }
 
