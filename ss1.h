@@ -102,6 +102,8 @@ struct store
 };
 
 int check(const char *path, struct store *lru);
+int deletee(const char *path,struct store* lru);
+void insert(const char* path,struct store* lru,int s);
 
 // error code
 #define DIR_EXISTS_ALREADY 50
