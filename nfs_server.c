@@ -46,6 +46,8 @@ typedef struct storage_server_data
 
 storage_server_data storage_server_array[67000];
 struct TrieNode *ss_root;
+struct store *lru;
+
 int storage_servers_connected;
 
 char *ip = "127.0.0.1";
@@ -826,7 +828,13 @@ void *ping_ss(void *arg)
 int main()
 {
     ss_root = createNode(); // to store servers
-
+     lru = (struct store *)malloc(sizeof(struct store));
+    lru->index = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        // bzero(lru->stringvalues[i],1024);
+        lru->ss_num[i] = 0;
+    }
     char buffer[1024];
     int n;
     storage_servers_connected = 0;
@@ -1021,8 +1029,24 @@ int main()
                 printf(CSTM2);
                 printf("Path received: %s\n", path1);
                 printf(RST);
-                if ((ch != 'f') && (ch != 'd'))
+                int check13 = 0;
+                check13 = check(path1, lru);
+                if ((ch != 'f') && (ch != 'd')){
+
+                   if (check13 == 0)
+                    {
+                        printf("Cache Miss\n");
                     ss_num1 = searchPath(ss_root, path1);
+                    insert(path1, lru, ss_num1);
+                    }
+                    else{
+                        ss_num1=check13;
+                        printf("Cache Hit\n");
+                    }
+                    if(ch=='F' || ch=='D'){
+                        deletee(path1,lru);
+                    }
+                }
                 else
                 {
                     char previousDir[PATH_MAX]; // Adjust the buffer size as needed
@@ -1030,7 +1054,17 @@ int main()
                     printf(YEL);
                     printf("Path to search: %s\n", previousDir);
                     printf(RST);
+                      check13=0;
+                    check13=check(previousDir,lru);
+                    if(check13==0){
+                        printf("Cache Miss\n");
                     ss_num1 = searchPath(ss_root, previousDir);
+                    insert(previousDir,lru,ss_num1);
+                    }
+                     else{
+                        ss_num1==check13;
+                        printf("Cache Hit\n");
+                    }
                 }
             }
             else
