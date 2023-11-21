@@ -26,3 +26,16 @@ also when delete/create/write/copy, read and file details cannot happen. impleme
 - paths entered: abc.txt file.txt, but file.txt must be passed as accessible path in ss2, may or may not exist in structure
 
 - so for redundancy right now i am copying into previous two servers if not down
+
+- Input: src_file dest_file
+1. dest_file must exist in dest server, if it is part of accessible paths(even if it doesn't exist) then a new file is created
+2. Its content is overwritten by content of src_file
+
+- Input: src_file dest_folder/dest_file_name
+1. dest_folder/dest_file_name must be part of accessible paths of some server (here, dest_folder needs to exist, dest_file may/may not initially exist)
+2. Its content is overwritten by content of src_file
+
+- Input: 
+src_dir dest_dir
+1. All files and folders inside src_dir are copied into dest_dir
+2. dest_dir needs to exist in some server

@@ -57,6 +57,7 @@ socklen_t addr_size;
 
 pthread_t nm_thread[30];
 
+
 int create_file_dir(int ss_port, char file_or_dir, char *path)
 {
 
@@ -185,8 +186,7 @@ int delete_file_dir(int ss_port, char file_or_dir, char *path)
     printf("Disconnected from the storage server with port %d.\n\n\n", ss_port);
     return flag_sucess;
 }
-
-void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
+void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
 {
     //   if (argc != 3)
     // {
@@ -316,6 +316,9 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
             recv(sock1, buffer, sizeof(buffer), 0); // filename
 
             send(sock2, buffer, strlen(buffer), 0);
+
+            printf("File_name: %s\n",buffer);
+
             recv(sock2, &ack, sizeof(ack), 0);
 
             ack = 1;
@@ -340,10 +343,203 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath)
         else if (c == 'D')
         {
             bzero(buffer, 1024);
-            recv(sock1, buffer, sizeof(buffer), 0);
-            send(sock2, buffer, strlen(buffer), 0);
+            recv(sock1, buffer, sizeof(buffer), 0);//received dir path
+            send(sock2, buffer, strlen(buffer), 0); //sent path
             recv(sock2, &ack, sizeof(ack), 0); // dirname
             printf("Dir name: %s\n", buffer);
+
+            ack = 1;
+            send(sock1, &ack, sizeof(ack), 0);
+        }
+        else if (c == 'E')
+        {
+            break;
+        }
+    }
+
+    char ack_stop[10];
+    recv(sock1, ack_stop, sizeof(ack_stop), 0);
+    if (strcmp(ack_stop, "STOP") == 0)
+        printf("STOP ack received\n\n\n");
+
+    recv(sock2, ack_stop, sizeof(ack_stop), 0);
+    if (strcmp(ack_stop, "STOP") == 0)
+        printf("STOP ack received\n\n\n");
+
+    close(sock1);
+    close(sock2);
+}
+void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int ss2_idx)
+{
+    //   if (argc != 3)
+    // {
+    //     fprintf(stderr, "Usage: %s <source> <destination>\n", argv[0]);
+    //     exit(1);
+    // }
+
+    // const char *srcPath = argv[1];
+    // const char *destPath = argv[2];
+    
+    char *ip = "127.0.0.1";
+    int port1 = ss_port;
+    int ack;
+    printf("%d %d\n",port1,port2);
+
+    int sock1; // copy from
+    struct sockaddr_in addr1;
+    socklen_t addr_size;
+    char buffer[1024];
+    int n;
+    sock1 = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock1 < 0)
+    {
+        perror("[-] 40: Socket error");
+        exit(1);
+    }
+    printf("[+]TCP server socket created.\n");
+
+    memset(&addr1, '\0', sizeof(addr1));
+    addr1.sin_family = AF_INET;
+    addr1.sin_port = htons(port1);
+    addr1.sin_addr.s_addr = inet_addr(ip);
+
+    connect(sock1, (struct sockaddr *)&addr1, sizeof(addr1));
+    printf("Connected to the storage server 1.\n");
+
+    // int port2 = 2345; // copy 2
+
+    bzero(buffer, 1024);
+    strcpy(buffer, "HELLO, THIS IS NM SERVER.");
+    printf("NM server: %s\n", buffer);
+    send(sock1, buffer, strlen(buffer), 0);
+
+    bzero(buffer, 1024);
+    recv(sock1, buffer, sizeof(buffer), 0);
+    printf("SS server: %s\n", buffer);
+
+    char c = 'p';
+    send(sock1, (char *)&c, sizeof(c), 0);
+
+    char ack_start[10];
+
+    if (recv(sock1, ack_start, sizeof(ack_start), 0) < 0)
+        printf("receive start ack error\n");
+    else
+        printf("START ack received\n");
+
+    bzero(buffer, 1024);
+    strcpy(buffer, srcPath);
+    printf("Sent: %s\n", buffer);
+    send(sock1, (char **)&buffer, sizeof(buffer), 0);
+    recv(sock1, &ack, sizeof(ack), 0);
+    // else
+    //     printf("%s\n",ack_start);
+
+    // if (strcmp(ack_start, "START") == 0)
+    //     printf("START ack received\n");
+    int sock2;
+    struct sockaddr_in addr2;
+
+    memset(&addr2, '\0', sizeof(addr2));
+    addr2.sin_family = AF_INET;
+    addr2.sin_port = htons(port2);
+    addr2.sin_addr.s_addr = inet_addr(ip);
+
+    sock2 = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock2 < 0)
+    {
+        perror("[-] 40: Socket error");
+        exit(1);
+    }
+    printf("[+]TCP server socket created.\n");
+
+    connect(sock2, (struct sockaddr *)&addr2, sizeof(addr2));
+    printf("Connected to the storage server 2.\n");
+
+    bzero(buffer, 1024);
+    strcpy(buffer, "HELLO, THIS IS NM SERVER.");
+    printf("NM server: %s\n", buffer);
+    send(sock2, buffer, strlen(buffer), 0);
+
+    bzero(buffer, 1024);
+    recv(sock2, buffer, sizeof(buffer), 0);
+    printf("SS server: %s\n", buffer);
+
+    c = 'c';
+    send(sock2, (char *)&c, sizeof(c), 0);
+
+    if (recv(sock2, ack_start, sizeof(ack_start), 0) < 0)
+        printf("receive start ack error\n");
+    else
+        printf("START ack received\n");
+
+    // start
+
+    bzero(buffer, 1024);
+    strcpy(buffer, destPath);
+    printf("Sent: %s\n", buffer);
+    send(sock1, &buffer, sizeof(buffer), 0);
+    recv(sock1, &ack, sizeof(ack), 0);
+
+    while (1)
+    {
+        char c;
+        recv(sock1, &c, sizeof(c), 0);
+        printf("Received: %c\n", c);
+
+        send(sock2, &c, sizeof(c), 0);
+        recv(sock2, &ack, sizeof(ack), 0); // till server2 doesnt receive c we dont go ahead
+
+        ack = 1;
+        send(sock1, &ack, sizeof(ack), 0); // send ack to sock1 only after receving ack from sock2
+
+        if (c == 'F')
+        {
+            bzero(buffer, 1024);
+            recv(sock1, buffer, sizeof(buffer), 0); // filename
+
+            send(sock2, buffer, strlen(buffer), 0);
+
+            printf("File_name: %s\n",buffer);
+            int check_if_exists = searchPath(ss_root, buffer); // search first path in accessible paths
+
+            if (check_if_exists < 0)
+                insertPath(ss_root,buffer,ss2_idx);
+
+
+            recv(sock2, &ack, sizeof(ack), 0);
+
+            ack = 1;
+            send(sock1, &ack, sizeof(ack), 0); // filename sent ack sent to sock1
+
+            // now actual file content
+            while (1)
+            {
+                bzero(buffer, 1024);
+                recv(sock1, buffer, sizeof(buffer), 0);
+                send(sock2, buffer, strlen(buffer), 0);
+                recv(sock2, &ack, sizeof(ack), 0);
+
+                ack = 1;
+                send(sock1, &ack, sizeof(ack), 0);
+
+                printf("Received: %s\n", buffer);
+                if (strcmp(buffer, "end") == 0)
+                    break;
+            }
+        }
+        else if (c == 'D')
+        {
+            bzero(buffer, 1024);
+            recv(sock1, buffer, sizeof(buffer), 0);//received dir path
+            send(sock2, buffer, strlen(buffer), 0); //sent path
+            recv(sock2, &ack, sizeof(ack), 0); // dirname
+            printf("Dir name: %s\n", buffer);
+
+            int check_if_exists = searchPath(ss_root, buffer); // search first path in accessible paths
+
+            if (check_if_exists < 0)
+                insertPath(ss_root,buffer,ss2_idx);
 
             ack = 1;
             send(sock1, &ack, sizeof(ack), 0);
@@ -550,7 +746,7 @@ void copy_one_ss_into_another(int src_idx, int dest_idx)
     while (accessible_paths_individual[i] != NULL)
     {
         printf("%s\n", accessible_paths_individual[i]);
-        copy_file_dir_nm(src_port, dest_port, accessible_paths_individual[i], accessible_paths_individual[i]);
+        copy_file_dir_one(src_port, dest_port, accessible_paths_individual[i], accessible_paths_individual[i]); //diff function slightly as we dont need to insert into trie
         i++;
     }
 }
@@ -961,7 +1157,7 @@ int main()
                         }
                         else
                         {
-                            copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2);
+                            copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2,ss_num2);
                         }
                     }
                 }
