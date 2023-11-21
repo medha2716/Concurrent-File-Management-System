@@ -55,6 +55,8 @@ int server_sock;
 struct sockaddr_in server_addr;
 socklen_t addr_size;
 
+pthread_t nm_thread[30];
+
 void create_file_dir(int ss_port, char file_or_dir, char *path)
 {
 
@@ -75,7 +77,7 @@ void create_file_dir(int ss_port, char file_or_dir, char *path)
 
     memset(&addr, '\0', sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = ss_port;
+    addr.sin_port = htons(ss_port);
     addr.sin_addr.s_addr = inet_addr(ip);
 
     connect(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -129,7 +131,7 @@ void delete_file_dir(int ss_port, char file_or_dir, char *path)
 
     memset(&addr, '\0', sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = ss_port;
+    addr.sin_port = htons(ss_port);
     addr.sin_addr.s_addr = inet_addr(ip);
 
     connect(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -361,7 +363,7 @@ void copy_file_dir_nm_self(int ss_port, char *srcPath, char *destPath)
 
     memset(&addr, '\0', sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = ss_port;
+    addr.sin_port = htons(ss_port);
     addr.sin_addr.s_addr = inet_addr(ip);
 
     connect(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -518,7 +520,7 @@ void copy_one_ss_into_another(int src_idx, int dest_idx)
 
     printf("%d %d\n", src_port, dest_port); // till here perfection
 
-    printf("%s\n",storage_server_array[src_idx].paths);
+    printf("%s\n", storage_server_array[src_idx].paths);
 
     char **accessible_paths_individual = tokenize_paths(storage_server_array[src_idx].paths);
 
@@ -528,6 +530,76 @@ void copy_one_ss_into_another(int src_idx, int dest_idx)
         copy_file_dir_nm(src_port, dest_port, accessible_paths_individual[i], accessible_paths_individual[i]);
         i++;
     }
+}
+
+void *ping_ss(void *arg)
+{
+
+    int index = *((int *)arg);
+    int ss_port = storage_server_array[index].nm_port;
+    while (1)
+    {
+        sleep(8);
+
+        char *ip = "127.0.0.1";
+
+        int sock;
+        struct sockaddr_in addr;
+        char buffer[1024];
+        int n;
+
+        sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (sock < 0)
+        {
+            perror("[-] 40: Socket error");
+            exit(1);
+        }
+
+        memset(&addr, '\0', sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(ss_port);
+        addr.sin_addr.s_addr = inet_addr(ip);
+
+        if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+        {
+            printf("\n\n[-] Connect error SS server with port %d\n\n", ss_port);
+            storage_server_array[index].status = DEAD;
+            close(sock);
+            continue; // move to the next iteration if connection fails
+        }
+
+        bzero(buffer, 1024);
+        strcpy(buffer, "HELLO, THIS IS NM SERVER (PING).");
+        send(sock, buffer, strlen(buffer), 0);
+
+        fd_set readfds;
+        struct timeval timeout;
+
+        FD_ZERO(&readfds);
+        FD_SET(sock, &readfds);
+
+        timeout.tv_sec = 10; // 10 second timeout
+        timeout.tv_usec = 0;
+
+        if (select(sock + 1, &readfds, NULL, NULL, &timeout) == 1)
+        {
+            // Data available for reading
+            bzero(buffer, 1024);
+            recv(sock, buffer, sizeof(buffer), 0);
+            // printf("SS server with port %d: %s\n", ss_port, buffer);
+            storage_server_array[index].status = ALIVE;
+        }
+        else
+        {
+            // Timeout reached, handle as needed
+            printf("\n\nTimeout reached while waiting for response from SS server with port %d\n\n\n", ss_port);
+            storage_server_array[index].status = DEAD;
+        }
+
+        close(sock);
+    }
+
+    return NULL;
 }
 
 int main()
@@ -550,7 +622,7 @@ int main()
 
     memset(&server_addr, '\0', sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = port;
+    server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = inet_addr(ip);
 
     n = bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
@@ -564,10 +636,13 @@ int main()
     // Listen on the socket,
     // with 100 max connection
     // requests queued
+
     if (listen(server_sock, 80) == 0) // 30 ss, 50 clients?
         printf("Listening...\n");
     else
         printf("42: Listening Error\n");
+
+    int i = 0;
 
     while (1)
     {
@@ -621,8 +696,9 @@ int main()
             // LRU Caching: Implement LRU (Least Recently Used) caching for recent searches. By caching recently accessed information, the NM can expedite subsequent requests for the same data, further improving response times and system efficiency.
 
             // need to get
+
             char temp_paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
-            strcpy(temp_paths,struct_received.accessible_paths); //as we are doing strtok but need to copy accessible paths  string into array struct
+            strcpy(temp_paths, struct_received.accessible_paths); // as we are doing strtok but need to copy accessible paths  string into array struct
 
             char **accessible_paths_individual = tokenize_paths(struct_received.accessible_paths);
             int ss_num = searchPath(ss_root, accessible_paths_individual[0]); // search first path in accessible paths
@@ -637,7 +713,6 @@ int main()
                 // if more than 2 ss then store paths in them and send their index
                 store_in_array(storage_servers_connected, struct_received.port_nm, struct_received.port_client, -1, -1);
                 strcpy(storage_server_array[storage_servers_connected].paths, temp_paths);
-                
 
                 int i = 0;
                 while (accessible_paths_individual[i] != NULL)
@@ -652,6 +727,7 @@ int main()
             {
                 copy_one_ss_into_another(1, 2);
             }
+            pthread_create(&nm_thread[i++], NULL, &ping_ss, &storage_servers_connected);
         }
         else if (ss_or_client == 3)
         {
@@ -710,6 +786,13 @@ int main()
 
             int ss_num1;
             int ss_num2;
+
+            // int checksearch = searchPath(ss_root, "main");
+            // printf("%d\n", checksearch);
+            // checksearch = searchPath(ss_root, "main/dir1");
+            // printf("%d\n", checksearch);
+            // checksearch = searchPath(ss_root, "main/dir1/file");
+            // printf("%d\n", checksearch);
 
             if (ch != 'c')
             {
@@ -794,6 +877,9 @@ int main()
 
             if ((permission == READ_ONLY) && (ch != 'r') && (ch != 't')) // do for c
             {
+                printf(RED);
+                printf("Storage server found but Read Only Path\n");
+                printf(RST);
                 strcpy(buffersend, "Storage server found but Read Only Path\n");
                 send(ss_sock, buffersend, sizeof(buffersend), 0);
                 continue;
@@ -810,6 +896,9 @@ int main()
             }
             else
             {
+                printf(RED);
+                printf("Storage server not found\n");
+                printf(RST);
                 strcpy(buffersend, "Storage server not found\n");
                 send(ss_sock, buffersend, sizeof(buffersend), 0);
                 continue;
@@ -856,6 +945,8 @@ int main()
             }
         }
     }
+    for (int i = 1; i <= storage_servers_connected; i++)
+        pthread_join(nm_thread[i], NULL);
 
     return 0;
 }

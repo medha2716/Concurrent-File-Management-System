@@ -15,20 +15,16 @@ typedef struct send_nm_init
 {
     int port_nm;
     int port_client;
-    char accessible_paths[MAX_LENGTH_ACC_PATHS_ONE_SS]; 
+    char accessible_paths[MAX_LENGTH_ACC_PATHS_ONE_SS];
     char ip[40];
 } send_nm_init;
 
 send_nm_init struct_to_send;
 
 pthread_t client_thread[MAX_CLIENTS];
+pthread_t nm_threads[5];
 
-// input enters: create file or directory, path to where it wants it to be created, and name of file/dir
-// void create_file_dir(char *new_name, char *path, char file_or_dir)
-// {
-//     if (file_or_dir == 'd')
-//         ;
-// }
+
 void copy_ss2(int client_sock)
 {
     int ack;
@@ -189,7 +185,7 @@ void *client_interactions(void *arg)
 
     memset(&ss_server_addr, '\0', sizeof(ss_server_addr));
     ss_server_addr.sin_family = AF_INET;
-    ss_server_addr.sin_port = port;
+    ss_server_addr.sin_port = htons(port);
     ss_server_addr.sin_addr.s_addr = inet_addr(ip);
 
     n = bind(ss_server_sock, (struct sockaddr *)&ss_server_addr, sizeof(ss_server_addr));
@@ -232,10 +228,120 @@ void *client_interactions(void *arg)
     return NULL;
 }
 
+void *nm_handle(void *param)
+{
+    int flag_to_stop=0;
+    int *nm_sock = (int *)param;
+    int nm_client_sock=*nm_sock;
+    char buffer[1024];
+    bzero(buffer, 1024);
+    recv(nm_client_sock, buffer, sizeof(buffer), 0);
+    printf("\n\n\nNM server: %s\n", buffer);
+
+    if (strcmp(buffer, "HELLO, THIS IS NM SERVER (PING).") == 0)
+    {
+        printf(HOT_PINK);
+        printf("Ping Received\n");
+        printf(RST);
+        flag_to_stop = 1;
+    }
+
+    bzero(buffer, 1024);
+    strcpy(buffer, "HI, THIS IS STORAGE SERVER!");
+    printf("SS server: %s\n", buffer);
+    send(nm_client_sock, buffer, strlen(buffer), 0);
+
+    if(flag_to_stop)
+        return NULL;
+    
+
+    char choice;
+    recv(nm_client_sock, &choice, sizeof(choice), 0);
+
+    char *ack_start = "START";
+    printf(GRN);
+    printf("START ack sent\n");
+    printf(RST);
+    send(nm_client_sock, ack_start, strlen(ack_start), 0);
+
+    int flag_success = 1;
+
+    char srcPath[PATH_MAX];
+    char destPath[PATH_MAX];
+    int ping;
+    int ack;
+    
+    switch (choice)
+    {
+    case 'f': // for creation of file
+        bzero(buffer, 1024);
+        recv(nm_client_sock, buffer, sizeof(buffer), 0);
+        int h = create_file(buffer);
+        break;
+    case 'd': // for creation of dir
+        bzero(buffer, 1024);
+        recv(nm_client_sock, buffer, sizeof(buffer), 0);
+        int l = create_dirs(buffer);
+        break;
+    case 'F': // for deletion of file
+        bzero(buffer, 1024);
+        recv(nm_client_sock, buffer, sizeof(buffer), 0);
+        l = delete_file(buffer);
+        break;
+    case 'D': // for deletion of dir
+        bzero(buffer, 1024);
+        recv(nm_client_sock, buffer, sizeof(buffer), 0);
+        l = delete_dir(buffer);
+        break;
+    case 'c': // sends its file/dir for copying
+        copy_ss2(nm_client_sock);
+        break;
+    case 'p': // for server that copies file/dir
+        ss1_copy(nm_client_sock);
+        break;
+    case 's': // copy from self
+
+        recv(nm_client_sock, srcPath, sizeof(srcPath), 0);
+        ack = 1;
+        send(nm_client_sock, &ack, sizeof(ack), 0);
+
+        recv(nm_client_sock, destPath, sizeof(destPath), 0);
+        ack = 1;
+        send(nm_client_sock, &ack, sizeof(ack), 0);
+        self_copy(srcPath, destPath);
+        break;
+    default:
+        // (when choice is none of the above)
+        flag_success = 0;
+        printf(RED);
+        printf("Unsure what the NM server wants to do\n");
+        printf(RST);
+        break;
+    }
+
+    if (flag_success)
+    {
+        char *ack_stop = "STOP";
+        printf("STOP ack sent\n");
+        send(nm_client_sock, ack_stop, strlen(ack_stop), 0);
+    }
+    else
+    {
+        char *ack_stop = "ERROR_STP";
+        printf(MAG);
+        printf("ERROR_STP ack sent\n");
+        printf(RST);
+        send(nm_client_sock, ack_stop, strlen(ack_stop), 0);
+    }
+
+    close(nm_client_sock);
+    printf("[+]Client disconnected.\n\n");
+    return NULL;
+}
 void *nm_commands(void *arg)
 {
     char *ip = "127.0.0.1";
-     int port = *((int *)arg);
+    int port = *((int *)arg);
 
     int ss_server_sock, nm_client_sock;
     struct sockaddr_in ss_server_addr, nm_client_addr;
@@ -253,7 +359,7 @@ void *nm_commands(void *arg)
 
     memset(&ss_server_addr, '\0', sizeof(ss_server_addr));
     ss_server_addr.sin_family = AF_INET;
-    ss_server_addr.sin_port = port;
+    ss_server_addr.sin_port = htons(port);
     ss_server_addr.sin_addr.s_addr = inet_addr(ip);
 
     n = bind(ss_server_sock, (struct sockaddr *)&ss_server_addr, sizeof(ss_server_addr));
@@ -267,100 +373,34 @@ void *nm_commands(void *arg)
     listen(ss_server_sock, 5);
     printf("Listening for NM server...\n\n\n");
 
+    int i = 0;
+
     while (1)
     {
         addr_size = sizeof(nm_client_addr);
         nm_client_sock = accept(ss_server_sock, (struct sockaddr *)&nm_client_addr, &addr_size);
         printf("[+]NM server connected.\n");
 
-        bzero(buffer, 1024);
-        recv(nm_client_sock, buffer, sizeof(buffer), 0);
-        printf("NM server: %s\n", buffer);
+        pthread_create(&client_thread[i++], NULL, nm_handle, &nm_client_sock);
 
-        bzero(buffer, 1024);
-        strcpy(buffer, "HI, THIS IS STORAGE SERVER!");
-        printf("SS server: %s\n", buffer);
-        send(nm_client_sock, buffer, strlen(buffer), 0);
-
-        char choice;
-        recv(nm_client_sock, &choice, sizeof(choice), 0);
-
-        char *ack_start = "START";
-        printf(GRN);
-        printf("START ack sent\n");
-        printf(RST);
-        send(nm_client_sock, ack_start, strlen(ack_start), 0);
-
-        int flag_success = 1;
-
-        char srcPath[PATH_MAX];
-        char destPath[PATH_MAX];
-        int ack;
-
-
-        switch (choice)
+        if (i >= 5)
         {
-        case 'f': // for creation of file
-            bzero(buffer, 1024);
-            recv(nm_client_sock, buffer, sizeof(buffer), 0);
-            int h = create_file(buffer);
-            break;
-        case 'd': // for creation of dir
-            bzero(buffer, 1024);
-            recv(nm_client_sock, buffer, sizeof(buffer), 0);
-            int l = create_dirs(buffer);
-            break;
-        case 'F': // for deletion of file
-            bzero(buffer, 1024);
-            recv(nm_client_sock, buffer, sizeof(buffer), 0);
-            l = delete_file(buffer);
-            break;
-        case 'D': // for deletion of dir
-            bzero(buffer, 1024);
-            recv(nm_client_sock, buffer, sizeof(buffer), 0);
-            l = delete_dir(buffer);
-            break;
-        case 'c': // sends its file/dir for copying
-            copy_ss2(nm_client_sock);
-            break;
-        case 'p': // for server that copies file/dir
-            ss1_copy(nm_client_sock);
-            break;
-        case 's': // copy from self
-
-            recv(nm_client_sock, srcPath, sizeof(srcPath), 0);
-            ack = 1;
-            send(nm_client_sock, &ack, sizeof(ack), 0);
-
-            recv(nm_client_sock, destPath, sizeof(destPath), 0);
-            ack = 1;
-            send(nm_client_sock, &ack, sizeof(ack), 0);
-            self_copy(srcPath, destPath);
-            break;
-        default:
-            // (when choice is none of the above)
-            flag_success = 0;
-            printf("Unsure what the NM server wants to do\n");
-            break;
+            // Update i
+            i = 0;
+            while (i < 5)
+            {
+                // Suspend execution of
+                // the calling thread
+                // until the target
+                // thread terminates
+                pthread_join(client_thread[i++], NULL);
+            }
+            // Update i
+            i = 0;
         }
-
-        if (flag_success)
-        {
-            char *ack_stop = "STOP";
-            printf("STOP ack sent\n");
-            send(nm_client_sock, ack_stop, strlen(ack_stop), 0);
-        }
-        else
-        {
-            char *ack_stop = "ERROR_STP";
-            printf("ERROR_STP ack sent\n");
-            send(nm_client_sock, ack_stop, strlen(ack_stop), 0);
-        }
-
-        close(nm_client_sock);
-        printf("[+]Client disconnected.\n\n");
     }
-    return NULL;
+
+return NULL;
 }
 
 void search_directory(const char *dir_path, char *temp_to_store_curr_paths)
@@ -468,7 +508,7 @@ void *update_file_structure_nm()
 
             memset(&addr, '\0', sizeof(addr));
             addr.sin_family = AF_INET;
-            addr.sin_port = port;
+            addr.sin_port = htons(port);
             addr.sin_addr.s_addr = inet_addr(ip);
 
             connect(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -566,7 +606,7 @@ int main()
 
     memset(&addr, '\0', sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = port;
+    addr.sin_port = htons(port);
     addr.sin_addr.s_addr = inet_addr(ip);
 
     connect(sock, (struct sockaddr *)&addr, sizeof(addr));
@@ -583,7 +623,7 @@ int main()
 
     // printf("%s\n", struct_to_send.ip);
 
-    send(sock, (send_nm_init*)&struct_to_send, sizeof(struct_to_send), 0);
+    send(sock, (send_nm_init *)&struct_to_send, sizeof(struct_to_send), 0);
 
     bzero(buffer, 1024);
     recv(sock, buffer, sizeof(buffer), 0);
@@ -593,7 +633,7 @@ int main()
     printf("Disconnected from the NM server.\n\n\n");
     printf(RST);
 
-    usleep(100); 
+    usleep(100);
 
     pthread_t connection_for_nm_commands;
     pthread_create(&connection_for_nm_commands, NULL, &nm_commands, &port_nm);

@@ -205,21 +205,22 @@ int main() {
 
 
     scanf("%d\n",&n);
+        char c='w';
     while(n--){
-        char c;
-        scanf("%c",&c);
+        // scanf("%c",&c);
         char input[1024];
         scanf("%s",input);
-    int x=check(input,lru);
-    if (x != 0)
-    {
-        printf("Path %s is in ss number %d\n", input, x); // execute
-        if(c=='D'){ //deleting directory
-            bzero(lru->stringvalues[x],1024);
-            lru->ss_num[x]=0;
-        }
-    }
-    else{
+    // int x=check(input,lru);
+    // if (x != 0)
+    // {
+    //     printf("Path %s is in ss number %d\n", input, x); // execute
+    //     if(c=='D'){ //deleting directory
+    //         bzero(lru->stringvalues[x],1024);
+    //         lru->ss_num[x]=0;
+    //     }
+    // }
+    // else{
+        char* dup=strdup(input);
         int* search_ss_port=searchPath(root,input);
         int ss_num=search_ss_port[0];
          if(ss_num==0){
@@ -238,10 +239,17 @@ int main() {
         }
 
         int port_num=search_ss_port[1]; // need to get
-       
+        char tmp[1024];
+        bzero(tmp,1024);
+     for(int i=0;i<strlen(dup);i++){
+        if(dup[i]=='/'){
+        insertPath(root,tmp,ss_num,ss_num,2);
+        }
+        tmp[i]=dup[i];
+     }
         insertPath(root,input,ss_num,ss_num,2);
         // free(input);
-    }
+    // }
 
    
     int s=0;
@@ -266,11 +274,11 @@ int main() {
     
 
     // Example search
-    int lru1=check("a/b",lru);
-    if(lru1!=0){
-        printf("Path 1 found using lru in ss %d\n",lru1);
-    }
-    else{
+    // int lru1=check("a/b",lru);
+    // if(lru1!=0){
+    //     printf("Path 1 found using lru in ss %d\n",lru1);
+    // }
+    // else{
 
     int* ex1=searchPath(root, "a/b");
     if (ex1[0]) {
@@ -278,12 +286,12 @@ int main() {
     } else {
         printf("52: Path 1 not found in the trie!\n");
     }
-    }
-     int lru2=check("a/b/c",lru);
-    if(lru2!=0){
-        printf("Path 2 found using lru in ss %d\n",lru2);
-    }
-    else{
+    // }
+    //  int lru2=check("a/b/c",lru);
+    // if(lru2!=0){
+    //     printf("Path 2 found using lru in ss %d\n",lru2);
+    // }
+    // else{
     int* ex2=searchPath(root, "a/b/c");
 
      if (ex2[0]) {
@@ -291,36 +299,52 @@ int main() {
     } else {
         printf("52: Path 2 not found in the trie!\n");
     }
-    }
-     int lru3=check("a/b/c/d",lru);
-    if(lru3!=0){
-        printf("Path 3 found using lru in ss %d\n",lru3);
-    }
-    else{
-int *ex3=searchPath(root, "a/b/c/d");
+    // }
+    //  int lru3=check("a",lru);
+    // if(lru3!=0){
+    //     printf("Path 3 found using lru in ss %d\n",lru3);
+    // }
+    // else{
+int *ex3=searchPath(root, "a");
       if (ex3[0]) {
         printf("Path 3 found in the trie in ss%d\n",ex3[2]);
     } else {
         printf("52: Path 3 not found in the trie!\n");
     }
-    }
-     int lru4=check("a/b/cc/d",lru);
-    if(lru4!=0){
-        printf("Path 4 found using lru in ss %d\n",lru4);
-    }
-    else{
-int* ex4=searchPath(root,"a/b/cc/d");
+    // }
+    //  int lru4=check("a/b/cc/d",lru);
+    // if(lru4!=0){
+    //     printf("Path 4 found using lru in ss %d\n",lru4);
+    // }
+    // else{
+int* ex4=searchPath(root,"a/b/c/d");
     if (ex4[0]) {
         printf("Path 4 found in the trie in ss%d !\n",ex4[2]);
     } else {
         printf("52: Path 4 not found in the trie!\n");
-    }
+    // }
     }
 
 
 
     return 0;
 }
+
+/*
+example
+2
+a/b  
+give no
+3
+a/b/c/d
+give no
+9
+Path 1 found in the trie in ss 9 !
+52: Path 2 not found in the trie!
+Path 3 found in the trie in ss9
+52: Path 4 not found in the trie!
+*/
+
 // search[0] gives ss num , search[1] gives port number
 // same input and output 
 /*

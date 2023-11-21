@@ -58,6 +58,11 @@ void write_file(int sock,char* path);
 #define MAG "\033[35m"
 #define CYN "\033[36m"
 #define WHT "\033[37m"
+#define LIGHT_PINK      "\x1b[38;5;207m"
+#define MEDIUM_PINK     "\x1b[38;5;206m"
+#define DARK_PINK       "\x1b[38;5;205m"
+#define HOT_PINK        "\x1b[38;5;198m"
+#define DEEP_PINK       "\x1b[38;5;199m"
 
 // Custom color codes
 #define CSTM1 "\033[38;5;200m"
