@@ -47,7 +47,6 @@ typedef struct storage_server_data
 storage_server_data storage_server_array[67000];
 struct TrieNode *ss_root;
 struct store *lru;
-
 int storage_servers_connected;
 
 char *ip = "127.0.0.1";
@@ -58,7 +57,6 @@ struct sockaddr_in server_addr;
 socklen_t addr_size;
 
 pthread_t nm_thread[30];
-
 
 int create_file_dir(int ss_port, char file_or_dir, char *path)
 {
@@ -106,17 +104,17 @@ int create_file_dir(int ss_port, char file_or_dir, char *path)
     send(sock, path, strlen(path), 0);
 
     char ack_stop[1000];
-    int flag_sucess=0;
-    bzero(ack_stop,1000);
+    int flag_sucess = 0;
+    bzero(ack_stop, 1000);
     recv(sock, ack_stop, sizeof(ack_stop), 0);
     printf(LIGHT_PINK);
     if (strcmp(ack_stop, "STOP") == 0)
     {
         printf("STOP ack received\n");
-        flag_sucess=1;
+        flag_sucess = 1;
     }
     else
-        printf("%s\n",ack_stop);
+        printf("%s\n", ack_stop);
     printf(RST);
 
     close(sock);
@@ -170,18 +168,18 @@ int delete_file_dir(int ss_port, char file_or_dir, char *path)
     send(sock, path, strlen(path), 0);
 
     char ack_stop[1000];
-    int flag_sucess=0;
-    bzero(ack_stop,1000);
+    int flag_sucess = 0;
+    bzero(ack_stop, 1000);
     recv(sock, ack_stop, sizeof(ack_stop), 0);
 
     printf(LIGHT_PINK);
     if (strcmp(ack_stop, "STOP") == 0)
     {
         printf("STOP ack received\n");
-        flag_sucess=1;
+        flag_sucess = 1;
     }
     else
-        printf("%s\n",ack_stop);
+        printf("%s\n", ack_stop);
     printf(RST);
 
     close(sock);
@@ -198,11 +196,11 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
 
     // const char *srcPath = argv[1];
     // const char *destPath = argv[2];
-    
+
     char *ip = "127.0.0.1";
     int port1 = ss_port;
     int ack;
-    printf("%d %d\n",port1,port2);
+    printf("%d %d\n", port1, port2);
 
     int sock1; // copy from
     struct sockaddr_in addr1;
@@ -319,7 +317,7 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
 
             send(sock2, buffer, strlen(buffer), 0);
 
-            printf("File_name: %s\n",buffer);
+            printf("File_name: %s\n", buffer);
 
             recv(sock2, &ack, sizeof(ack), 0);
 
@@ -345,9 +343,9 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
         else if (c == 'D')
         {
             bzero(buffer, 1024);
-            recv(sock1, buffer, sizeof(buffer), 0);//received dir path
-            send(sock2, buffer, strlen(buffer), 0); //sent path
-            recv(sock2, &ack, sizeof(ack), 0); // dirname
+            recv(sock1, buffer, sizeof(buffer), 0); // received dir path
+            send(sock2, buffer, strlen(buffer), 0); // sent path
+            recv(sock2, &ack, sizeof(ack), 0);      // dirname
             printf("Dir name: %s\n", buffer);
 
             ack = 1;
@@ -381,11 +379,11 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
 
     // const char *srcPath = argv[1];
     // const char *destPath = argv[2];
-    
+
     char *ip = "127.0.0.1";
     int port1 = ss_port;
     int ack;
-    printf("%d %d\n",port1,port2);
+    printf("%d %d\n", port1, port2);
 
     int sock1; // copy from
     struct sockaddr_in addr1;
@@ -502,12 +500,11 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
 
             send(sock2, buffer, strlen(buffer), 0);
 
-            printf("File_name: %s\n",buffer);
+            printf("File_name: %s\n", buffer);
             int check_if_exists = searchPath(ss_root, buffer); // search first path in accessible paths
 
             if (check_if_exists < 0)
-                insertPath(ss_root,buffer,ss2_idx);
-
+                insertPath(ss_root, buffer, ss2_idx);
 
             recv(sock2, &ack, sizeof(ack), 0);
 
@@ -533,15 +530,15 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
         else if (c == 'D')
         {
             bzero(buffer, 1024);
-            recv(sock1, buffer, sizeof(buffer), 0);//received dir path
-            send(sock2, buffer, strlen(buffer), 0); //sent path
-            recv(sock2, &ack, sizeof(ack), 0); // dirname
+            recv(sock1, buffer, sizeof(buffer), 0); // received dir path
+            send(sock2, buffer, strlen(buffer), 0); // sent path
+            recv(sock2, &ack, sizeof(ack), 0);      // dirname
             printf("Dir name: %s\n", buffer);
 
             int check_if_exists = searchPath(ss_root, buffer); // search first path in accessible paths
 
             if (check_if_exists < 0)
-                insertPath(ss_root,buffer,ss2_idx);
+                insertPath(ss_root, buffer, ss2_idx);
 
             ack = 1;
             send(sock1, &ack, sizeof(ack), 0);
@@ -748,7 +745,7 @@ void copy_one_ss_into_another(int src_idx, int dest_idx)
     while (accessible_paths_individual[i] != NULL)
     {
         printf("%s\n", accessible_paths_individual[i]);
-        copy_file_dir_one(src_port, dest_port, accessible_paths_individual[i], accessible_paths_individual[i]); //diff function slightly as we dont need to insert into trie
+        copy_file_dir_one(src_port, dest_port, accessible_paths_individual[i], accessible_paths_individual[i]); // diff function slightly as we dont need to insert into trie
         i++;
     }
 }
@@ -760,7 +757,6 @@ void *ping_ss(void *arg)
     int ss_port = storage_server_array[index].nm_port;
     while (1)
     {
-        
 
         char *ip = "127.0.0.1";
 
@@ -828,13 +824,14 @@ void *ping_ss(void *arg)
 int main()
 {
     ss_root = createNode(); // to store servers
-     lru = (struct store *)malloc(sizeof(struct store));
+    lru = (struct store *)malloc(sizeof(struct store));
     lru->index = 0;
     for (int i = 0; i < 5; i++)
     {
         // bzero(lru->stringvalues[i],1024);
         lru->ss_num[i] = 0;
     }
+
     char buffer[1024];
     int n;
     storage_servers_connected = 0;
@@ -1031,20 +1028,23 @@ int main()
                 printf(RST);
                 int check13 = 0;
                 check13 = check(path1, lru);
-                if ((ch != 'f') && (ch != 'd')){
+                if ((ch != 'f') && (ch != 'd'))
+                {
 
-                   if (check13 == 0)
+                    if (check13 == 0)
                     {
                         printf("Cache Miss\n");
-                    ss_num1 = searchPath(ss_root, path1);
-                    insert(path1, lru, ss_num1);
+                        ss_num1 = searchPath(ss_root, path1);
+                        insert(path1, lru, ss_num1);
                     }
-                    else{
-                        ss_num1=check13;
+                    else
+                    {
+                        ss_num1 = check13;
                         printf("Cache Hit\n");
                     }
-                    if(ch=='F' || ch=='D'){
-                        deletee(path1,lru);
+                    if (ch == 'F' || ch == 'D')
+                    {
+                        deletee(path1, lru);
                     }
                 }
                 else
@@ -1054,15 +1054,18 @@ int main()
                     printf(YEL);
                     printf("Path to search: %s\n", previousDir);
                     printf(RST);
-                      check13=0;
-                    check13=check(previousDir,lru);
-                    if(check13==0){
+
+                    check13 = 0;
+                    check13 = check(previousDir, lru);
+                    if (check13 == 0)
+                    {
                         printf("Cache Miss\n");
-                    ss_num1 = searchPath(ss_root, previousDir);
-                    insert(previousDir,lru,ss_num1);
+                        ss_num1 = searchPath(ss_root, previousDir);
+                        insert(previousDir, lru, ss_num1);
                     }
-                     else{
-                        ss_num1==check13;
+                    else
+                    {
+                        ss_num1 = check13;
                         printf("Cache Hit\n");
                     }
                 }
@@ -1130,7 +1133,8 @@ int main()
 
             bzero(buffersend, 1024);
 
-            if ((permission == READ_ONLY) && (ch != 'r') && (ch != 't')) // do for c
+
+            if ((permission == READ_ONLY) && (ch != 'r') && (ch != 't')) 
             {
                 printf(RED);
                 printf("Storage server found but Read Only Path\n");
@@ -1174,12 +1178,12 @@ int main()
                     if ((ch == 'f') || (ch == 'd'))
                     {
                         printf("Creating...\n");
-                        if(create_file_dir(ss_port_nm, ch, path1))
+                        if (create_file_dir(ss_port_nm, ch, path1))
                             insertPath(ss_root, path1, ss_num1);
                     }
                     else if ((ch == 'F') || (ch == 'D'))
                     {
-                        if(delete_file_dir(ss_port_nm, ch, path1))
+                        if (delete_file_dir(ss_port_nm, ch, path1))
                             removee(ss_root, path1, 0);
                     }
                     else if (ch == 'c')
@@ -1191,7 +1195,7 @@ int main()
                         }
                         else
                         {
-                            copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2,ss_num2);
+                            copy_file_dir_nm(ss1_nm, ss2_nm, struct_received.path1, struct_received.path2, ss_num2);
                         }
                     }
                 }

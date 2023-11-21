@@ -52,6 +52,7 @@ int deletee(const char *path,struct store* lru){
             }
         }
     }
+    return 0;
 }
 
 
