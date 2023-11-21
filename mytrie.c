@@ -11,6 +11,50 @@
 // then check for normal functions if u can search n stuff
 // figure out how to update trie when file structure updated
 
+int check(const char *path, struct store *lru)
+{
+    int anss = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        if ((lru->stringvalues[i]!=NULL) && strcmp(path, lru->stringvalues[i]) == 0)
+        {
+            anss = lru->ss_num[i];
+            break;
+        }
+    }
+    return anss;
+}
+void insert(const char* path,struct store* lru,int s){
+       lru->stringvalues[lru->index % 5] = strdup(path);
+            lru->ss_num[lru->index % 5] = s;
+            lru->index = (lru->index + 1) % 5;
+}
+int deletee(const char *path,struct store* lru){
+    for(int i=0;i<5;i++){
+        int flag=0;
+        if(lru->stringvalues[i]!=NULL){
+            int j;
+            if(strlen(lru->stringvalues[i])>=strlen(path)){
+
+            for(j=0;j<strlen(path);j++){
+                if(path[j]==lru->stringvalues[i][j]){
+
+                }
+                else{
+                    flag=-1;
+                    break;
+                }
+            }
+            if(flag==0 && (strlen(lru->stringvalues[i])==strlen(path) || lru->stringvalues[i][j]=='/')){
+                bzero(lru->stringvalues[i],1024);
+                lru->ss_num[i]=0;
+            }
+            }
+        }
+    }
+}
+
+
 struct TrieNode *createNode()
 {
     struct TrieNode *node = (struct TrieNode *)malloc(sizeof(struct TrieNode));
