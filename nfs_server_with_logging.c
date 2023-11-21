@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include "ss1.h"
+#include "logger.h"
 
 // 1 for ss (ss_or_client)
 // 2 for client
@@ -67,6 +68,8 @@ int create_file_dir(int ss_port, char file_or_dir, char *path)
     struct sockaddr_in addr;
     char buffer[1024];
     int n;
+    char *port_str;
+    sprintf(port_str, "%d", ss_port);
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
@@ -91,6 +94,7 @@ int create_file_dir(int ss_port, char file_or_dir, char *path)
 
     bzero(buffer, 1024);
     recv(sock, buffer, sizeof(buffer), 0);
+    log_insert("[SS] - connected... - ", port_str);
     printf("SS server: %s\n", buffer);
 
     char c = file_or_dir;
@@ -98,6 +102,7 @@ int create_file_dir(int ss_port, char file_or_dir, char *path)
 
     char ack_start[10];
     recv(sock, ack_start, sizeof(ack_start), 0);
+    log_insert("[SS] - start ack recieved - ", port_str);
     if (strcmp(ack_start, "START") == 0)
         printf("START ack received\n");
 
@@ -107,6 +112,7 @@ int create_file_dir(int ss_port, char file_or_dir, char *path)
     int flag_sucess=0;
     bzero(ack_stop,1000);
     recv(sock, ack_stop, sizeof(ack_stop), 0);
+    log_insert("[SS] - stop ack recieved - ", port_str);
     printf(LIGHT_PINK);
     if (strcmp(ack_stop, "STOP") == 0)
     {
@@ -131,6 +137,8 @@ int delete_file_dir(int ss_port, char file_or_dir, char *path)
     struct sockaddr_in addr;
     char buffer[1024];
     int n;
+    char *port_str;
+    sprintf(port_str, "%d", ss_port);
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
@@ -155,6 +163,7 @@ int delete_file_dir(int ss_port, char file_or_dir, char *path)
 
     bzero(buffer, 1024);
     recv(sock, buffer, sizeof(buffer), 0);
+    log_insert("[SS] - Connecting... - ", port_str);
     printf("SS server: %s\n", buffer);
 
     char c = file_or_dir;
@@ -162,6 +171,7 @@ int delete_file_dir(int ss_port, char file_or_dir, char *path)
 
     char ack_start[10];
     recv(sock, ack_start, sizeof(ack_start), 0);
+    log_insert("[SS] - Start ack recieved - ", port_str);
     if (strcmp(ack_start, "START") == 0)
         printf("START ack received\n");
 
@@ -171,6 +181,7 @@ int delete_file_dir(int ss_port, char file_or_dir, char *path)
     int flag_sucess=0;
     bzero(ack_stop,1000);
     recv(sock, ack_stop, sizeof(ack_stop), 0);
+    log_insert("[SS] - stop ack recieved - ", port_str);
 
     printf(LIGHT_PINK);
     if (strcmp(ack_stop, "STOP") == 0)
@@ -199,8 +210,11 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
     
     char *ip = "127.0.0.1";
     int port1 = ss_port;
+    char *port_str_ss, *port_str_ss2;
     int ack;
     printf("%d %d\n",port1,port2);
+        sprintf(port_str_ss, "%d", port1);
+    sprintf(port_str_ss2, "%d", port2);
 
     int sock1; // copy from
     struct sockaddr_in addr1;
@@ -232,6 +246,7 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
 
     bzero(buffer, 1024);
     recv(sock1, buffer, sizeof(buffer), 0);
+    log_insert("[SS] - Connected... - ", port_str_ss);
     printf("SS server: %s\n", buffer);
 
     char c = 'p';
@@ -244,11 +259,13 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
     else
         printf("START ack received\n");
 
+    log_insert("[SS] - start ack recieved - ", port_str_ss);
     bzero(buffer, 1024);
     strcpy(buffer, srcPath);
     printf("Sent: %s\n", buffer);
     send(sock1, (char **)&buffer, sizeof(buffer), 0);
     recv(sock1, &ack, sizeof(ack), 0);
+    log_insert("[SS] - ack recieved - ", port_str_ss);
     // else
     //     printf("%s\n",ack_start);
 
@@ -280,6 +297,7 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
 
     bzero(buffer, 1024);
     recv(sock2, buffer, sizeof(buffer), 0);
+    log_insert("[SS] - buffer recieved - ", port_str_ss2);
     printf("SS server: %s\n", buffer);
 
     c = 'c';
@@ -289,7 +307,7 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
         printf("receive start ack error\n");
     else
         printf("START ack received\n");
-
+    log_insert("[SS] - start ack recieved - ", port_str_ss);
     // start
 
     bzero(buffer, 1024);
@@ -297,6 +315,7 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
     printf("Sent: %s\n", buffer);
     send(sock1, &buffer, sizeof(buffer), 0);
     recv(sock1, &ack, sizeof(ack), 0);
+    log_insert("[SS] - ack recieved - ", port_str_ss);
 
     while (1)
     {
@@ -306,7 +325,8 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
 
         send(sock2, &c, sizeof(c), 0);
         recv(sock2, &ack, sizeof(ack), 0); // till server2 doesnt receive c we dont go ahead
-
+        log_insert("[SS] - ack recieved - ", port_str_ss2);
+        
         ack = 1;
         send(sock1, &ack, sizeof(ack), 0); // send ack to sock1 only after receving ack from sock2
 
@@ -314,12 +334,14 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
         {
             bzero(buffer, 1024);
             recv(sock1, buffer, sizeof(buffer), 0); // filename
+            log_insert("[SS] - filename recieved - ", port_str_ss);
 
             send(sock2, buffer, strlen(buffer), 0);
 
             printf("File_name: %s\n",buffer);
 
             recv(sock2, &ack, sizeof(ack), 0);
+            log_insert("[SS] - ack recieved - ", port_str_ss2);
 
             ack = 1;
             send(sock1, &ack, sizeof(ack), 0); // filename sent ack sent to sock1
@@ -329,8 +351,11 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
             {
                 bzero(buffer, 1024);
                 recv(sock1, buffer, sizeof(buffer), 0);
+                log_insert("[SS] - file content recieved - ", port_str_ss);
                 send(sock2, buffer, strlen(buffer), 0);
                 recv(sock2, &ack, sizeof(ack), 0);
+                log_insert("[SS] - ack - ", port_str_ss2);
+                
 
                 ack = 1;
                 send(sock1, &ack, sizeof(ack), 0);
@@ -344,8 +369,10 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
         {
             bzero(buffer, 1024);
             recv(sock1, buffer, sizeof(buffer), 0);//received dir path
+            log_insert("[SS] - directory path recieved - ", port_str_ss);
             send(sock2, buffer, strlen(buffer), 0); //sent path
             recv(sock2, &ack, sizeof(ack), 0); // dirname
+            log_insert("[SS] - directory name recieved - ", port_str_ss2);
             printf("Dir name: %s\n", buffer);
 
             ack = 1;
@@ -359,10 +386,12 @@ void copy_file_dir_one(int ss_port, int port2, char *srcPath, char *destPath)
 
     char ack_stop[10];
     recv(sock1, ack_stop, sizeof(ack_stop), 0);
+    log_insert("[SS] - stop ack recieved - ", port_str_ss);
     if (strcmp(ack_stop, "STOP") == 0)
         printf("STOP ack received\n\n\n");
 
     recv(sock2, ack_stop, sizeof(ack_stop), 0);
+    log_insert("[SS] - stop ack recieved - ", port_str_ss2);
     if (strcmp(ack_stop, "STOP") == 0)
         printf("STOP ack received\n\n\n");
 
@@ -384,6 +413,8 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
     int port1 = ss_port;
     int ack;
     printf("%d %d\n",port1,port2);
+    char *port_str;
+    sprintf(port_str, "%d", ss_port);
 
     int sock1; // copy from
     struct sockaddr_in addr1;
@@ -415,6 +446,8 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
 
     bzero(buffer, 1024);
     recv(sock1, buffer, sizeof(buffer), 0);
+
+    log_insert("[SS] - buffer recieved - ", port_str);
     printf("SS server: %s\n", buffer);
 
     char c = 'p';
@@ -426,12 +459,14 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
         printf("receive start ack error\n");
     else
         printf("START ack received\n");
+    log_insert("[SS] - start ack recieved - ", port_str);
 
     bzero(buffer, 1024);
     strcpy(buffer, srcPath);
     printf("Sent: %s\n", buffer);
     send(sock1, (char **)&buffer, sizeof(buffer), 0);
     recv(sock1, &ack, sizeof(ack), 0);
+    log_insert("[SS] - ack recieved - ", port_str);
     // else
     //     printf("%s\n",ack_start);
 
@@ -463,6 +498,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
 
     bzero(buffer, 1024);
     recv(sock2, buffer, sizeof(buffer), 0);
+    log_insert("[SS] - buffer recieved - ", port_str);
     printf("SS server: %s\n", buffer);
 
     c = 'c';
@@ -480,6 +516,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
     printf("Sent: %s\n", buffer);
     send(sock1, &buffer, sizeof(buffer), 0);
     recv(sock1, &ack, sizeof(ack), 0);
+    log_insert("[SS] - ack recieved - ", port_str);
 
     while (1)
     {
@@ -489,6 +526,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
 
         send(sock2, &c, sizeof(c), 0);
         recv(sock2, &ack, sizeof(ack), 0); // till server2 doesnt receive c we dont go ahead
+        log_insert("[SS] - ack recieved - ", port_str);
 
         ack = 1;
         send(sock1, &ack, sizeof(ack), 0); // send ack to sock1 only after receving ack from sock2
@@ -497,6 +535,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
         {
             bzero(buffer, 1024);
             recv(sock1, buffer, sizeof(buffer), 0); // filename
+            log_insert("[SS] - filename recieved - ", port_str);
 
             send(sock2, buffer, strlen(buffer), 0);
 
@@ -508,6 +547,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
 
 
             recv(sock2, &ack, sizeof(ack), 0);
+            log_insert("[SS] - ack recieved - ", port_str);
 
             ack = 1;
             send(sock1, &ack, sizeof(ack), 0); // filename sent ack sent to sock1
@@ -518,6 +558,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
                 bzero(buffer, 1024);
                 recv(sock1, buffer, sizeof(buffer), 0);
                 send(sock2, buffer, strlen(buffer), 0);
+                log_insert("[SS] - file content recieved - ", port_str);
                 recv(sock2, &ack, sizeof(ack), 0);
 
                 ack = 1;
@@ -532,8 +573,10 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
         {
             bzero(buffer, 1024);
             recv(sock1, buffer, sizeof(buffer), 0);//received dir path
+            log_insert("[SS] - dir path recieved - ", port_str);
             send(sock2, buffer, strlen(buffer), 0); //sent path
             recv(sock2, &ack, sizeof(ack), 0); // dirname
+            log_insert("[SS] - dir name recieved - ", port_str);
             printf("Dir name: %s\n", buffer);
 
             int check_if_exists = searchPath(ss_root, buffer); // search first path in accessible paths
@@ -556,6 +599,7 @@ void copy_file_dir_nm(int ss_port, int port2, char *srcPath, char *destPath, int
         printf("STOP ack received\n\n\n");
 
     recv(sock2, ack_stop, sizeof(ack_stop), 0);
+    log_insert("[SS] - stop ack recieved - ", port_str);
     if (strcmp(ack_stop, "STOP") == 0)
         printf("STOP ack received\n\n\n");
 
@@ -829,6 +873,7 @@ int main()
 
     char buffer[1024];
     int n;
+    char* port_str;
     storage_servers_connected = 0;
 
     printf("Initializing Naming Server..\n\n");
@@ -896,6 +941,7 @@ int main()
             printf("IP port: %s\n", "127.0.0.1");
             printf("Port for NM connection: %d\n", struct_received.port_nm);
             printf("Port for client interaction: %d\n", struct_received.port_client);
+            sprintf(port_str, "%d", struct_received.port_client);
 
             if (check >= 0) // struct received
             {
@@ -983,6 +1029,7 @@ int main()
         {
             // for each client we have to have a different thread
             char *response = "CLIENT COMMAND RECEIVED";
+            log_insert("[Client] - Recieved command - ", port_str);
             send(ss_sock, response, sizeof(response), 0);
 
             printf("\nNM Server: %s\n", response);

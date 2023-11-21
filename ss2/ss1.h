@@ -25,6 +25,8 @@ typedef struct chunk
 
 int directoryExists(char *path);
 void get_accessible_path_present(char *relativePath);
+int waitForAck(int sock, int expectedAck, int timeoutSeconds);
+
 
 int create_file(char *relativePath);
 int create_dirs(char *relativePath);
@@ -76,3 +78,7 @@ void write_file(int sock, char *path);
 #define FILE_DOES_NOT_EXIST 56
 #define DIR_DELETION_ERROR 57
 #define DIR_DOES_NOT_EXIST 58
+#define ERR_OPEN_FILE 59
+#define ERR_WRITE_FILE 60
+#define ERR_READ_FILE 61
+#define CLIENT_COMM_ERROR 62

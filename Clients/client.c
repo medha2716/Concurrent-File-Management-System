@@ -31,7 +31,7 @@ int waitForAck(int sock, int expectedAck, int timeoutSeconds)
 
   if (ready == -1)
   {
-    perror("select");
+    printf("select");
     return -1;
   }
   else if (ready == 0)
@@ -46,7 +46,7 @@ int waitForAck(int sock, int expectedAck, int timeoutSeconds)
     int ack;
     if (recv(sock, &ack, sizeof(ack), 0) < 0)
     {
-      perror("201: Error receiving ack from client");
+      printf("201: Error receiving ack from client");
       return -1;
     }
 
@@ -114,6 +114,42 @@ void write_file_client(char *buffer, int sock)
       break;
     }
   }
+}
+
+
+char *check_which_error(int error_code)
+{
+    switch (error_code)
+    {
+    case DIR_EXISTS_ALREADY:
+        return "DIRECTORY EXISTS ALREADY";
+    case DIR_CREATION_FAILED:
+        return "DIRECTORY CREATION FAILED";
+    case MAX_PATH_LENGTH_EXCEEDED:
+        return "MAXIMUM PATH LENGTH EXCEEDED";
+    case FILE_EXISTS:
+        return "FILE EXISTS";
+    case FILE_CREATE_ERROR:
+        return "FILE CREATION ERROR";
+    case DELETE_FILE_ERROR:
+        return "DELETE FILE ERROR";
+    case FILE_DOES_NOT_EXIST:
+        return "FILE DOES NOT EXIST";
+    case DIR_DELETION_ERROR:
+        return "DIRECTORY DELETION ERROR";
+    case DIR_DOES_NOT_EXIST:
+        return "DIRECTORY DOES NOT EXIST";
+    case ERR_OPEN_FILE:
+        return "ERROR OPENING FILE";
+    case ERR_WRITE_FILE:
+        return "ERROR WRITING TO FILE";
+    case ERR_READ_FILE:
+        return "ERROR READING FROM FILE";
+    case CLIENT_COMM_ERROR:
+        return "CLIENT COMMUNICATION ERROR";
+    default:
+        return "Unknown error";
+    }
 }
 
 int execute1()
@@ -198,9 +234,8 @@ int execute1()
   bzero(buffersend, 1024);
   recv(sock, buffersend, sizeof(buffersend), 0);
 
-
   printf(MAG);
-  printf("%s\n",buffersend);
+  printf("%s\n", buffersend);
   printf(RST);
 
   if (strcmp(buffersend, "Storage server found\n") != 0)
@@ -257,15 +292,18 @@ int execute1()
     char c = command_indicator; /// t,r,w
     send(sock, &c, sizeof(c), 0);
 
-    char ack_start[10];
-    recv(sock, ack_start, sizeof(ack_start), 0);
-    if (strcmp(ack_start, "START") == 0)
-      printf("START ack received\n");
-
     send(sock, path, strlen(path), 0);
+
+ 
+      char ack_start[10];
+      recv(sock, ack_start, sizeof(ack_start), 0);
+      if (strcmp(ack_start, "START") == 0)
+        printf("START ack received\n");
+
 
     if (c == 't')
     {
+
       char result[4096];
       bzero(result, 4096);
       recv(sock, result, sizeof(result), 0);
@@ -281,6 +319,7 @@ int execute1()
     }
     else if (c == 'r')
     {
+     
 
       int i = 0;
       while (no_received < chunk_no)
@@ -288,18 +327,22 @@ int execute1()
         chunk *received_packet = (chunk *)malloc(sizeof(chunk));
 
         recv(sock, received_packet, sizeof(chunk), 0);
+
         printf("[+]Data received: %s\n", received_packet->chunk_buffer);
         strncpy(chunk_array[i++]->chunk_buffer, received_packet->chunk_buffer, sizeof(received_packet->chunk_buffer));
         chunk_no = received_packet->chunk_no; // set the correct no of chunks
 
         int ack = received_packet->seq;
+
         send(sock, &ack, sizeof(ack), 0);
         printf("[+]Ack sent: %d\n", ack);
+
         no_received++;
       }
     }
     else if (c == 'w')
     {
+
       printf("Enter the content you want to write in the file:\n");
       char texts[MAX_FILE_READ];
       // char temp[MAX_FILE_READ];
@@ -324,10 +367,12 @@ int execute1()
 
       write_file_client(texts, sock);
 
-      char ack_stop[10];
+      char ack_stop[1000];
       recv(sock, ack_stop, sizeof(ack_stop), 0);
       if (strcmp(ack_stop, "STOP") == 0)
         printf("STOP ack received\n");
+      else
+        printf("%s\n", ack_stop);
     }
 
     close(sock);
@@ -338,9 +383,9 @@ int execute1()
       printf("\e[1;36mFile data read: "); // for reading file
       for (int i = 0; i < chunk_no; i++)
       {
-        printf("%s\n", chunk_array[i]->chunk_buffer);
+        printf("%s", chunk_array[i]->chunk_buffer);
       }
-      printf("\n\033[0m");
+      printf("\n\n\033[0m");
     }
   }
 }
@@ -442,16 +487,16 @@ int execute()
     recv(sock, buffersend, sizeof(buffersend), 0);
 
     printf(MAG);
-    printf("%s\n",buffersend);
+    printf("%s\n", buffersend);
     printf(RST);
 
     if (strcmp(buffersend, "Storage server found\n") != 0)
     {
-      
+
       close(sock);
       printf("Disconnected from the NM server\n\n");
       return -1;
-    }  
+    }
   }
   else
   {
@@ -470,11 +515,11 @@ int execute()
 
     if (strcmp(buffersend, "Storage server found\n") != 0)
     {
-      
+
       close(sock);
       printf("Disconnected from the NM server\n\n");
       return -1;
-    }  
+    }
   }
 
   close(sock);

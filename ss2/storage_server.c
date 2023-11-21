@@ -24,28 +24,38 @@ send_nm_init struct_to_send;
 pthread_t client_thread[MAX_CLIENTS];
 pthread_t nm_threads[10];
 
-char* check_which_error(int error_code) {
-    switch (error_code) {
-        case DIR_EXISTS_ALREADY:
-            return "DIRECTORY EXISTS ALREADY";
-        case DIR_CREATION_FAILED:
-            return "DIRECTORY CREATION FAILED";
-        case MAX_PATH_LENGTH_EXCEEDED:
-            return "MAXIMUM PATH LENGTH EXCEEDED";
-        case FILE_EXISTS:
-            return "FILE EXISTS";
-        case FILE_CREATE_ERROR:
-            return "FILE CREATION ERROR";
-        case DELETE_FILE_ERROR:
-            return "DELETE FILE ERROR";
-        case FILE_DOES_NOT_EXIST:
-            return "FILE DOES NOT EXIST";
-        case DIR_DELETION_ERROR:
-            return "DIRECTORY DELETION ERROR";
-        case DIR_DOES_NOT_EXIST:
-            return "DIRECTORY DOES NOT EXIST";
-        default:
-            return "Unknown error";
+char *check_which_error(int error_code)
+{
+    switch (error_code)
+    {
+    case DIR_EXISTS_ALREADY:
+        return "DIRECTORY EXISTS ALREADY";
+    case DIR_CREATION_FAILED:
+        return "DIRECTORY CREATION FAILED";
+    case MAX_PATH_LENGTH_EXCEEDED:
+        return "MAXIMUM PATH LENGTH EXCEEDED";
+    case FILE_EXISTS:
+        return "FILE EXISTS";
+    case FILE_CREATE_ERROR:
+        return "FILE CREATION ERROR";
+    case DELETE_FILE_ERROR:
+        return "DELETE FILE ERROR";
+    case FILE_DOES_NOT_EXIST:
+        return "FILE DOES NOT EXIST";
+    case DIR_DELETION_ERROR:
+        return "DIRECTORY DELETION ERROR";
+    case DIR_DOES_NOT_EXIST:
+        return "DIRECTORY DOES NOT EXIST";
+    case ERR_OPEN_FILE:
+        return "ERROR OPENING FILE";
+    case ERR_WRITE_FILE:
+        return "ERROR WRITING TO FILE";
+    case ERR_READ_FILE:
+        return "ERROR READING FROM FILE";
+    case CLIENT_COMM_ERROR:
+        return "CLIENT COMMUNICATION ERROR";
+    default:
+        return "Unknown error";
     }
 }
 void copy_ss2(int client_sock)
@@ -253,9 +263,9 @@ void *client_interactions(void *arg)
 
 void *nm_handle(void *param)
 {
-    int flag_to_stop=0;
+    int flag_to_stop = 0;
     int *nm_sock = (int *)param;
-    int nm_client_sock=*nm_sock;
+    int nm_client_sock = *nm_sock;
     char buffer[1024];
     bzero(buffer, 1024);
     recv(nm_client_sock, buffer, sizeof(buffer), 0);
@@ -274,9 +284,8 @@ void *nm_handle(void *param)
     printf("SS server: %s\n", buffer);
     send(nm_client_sock, buffer, strlen(buffer), 0);
 
-    if(flag_to_stop)
+    if (flag_to_stop)
         return NULL;
-    
 
     char choice;
     recv(nm_client_sock, &choice, sizeof(choice), 0);
@@ -341,9 +350,9 @@ void *nm_handle(void *param)
         printf(RST);
         break;
     }
-    if((flag_success==1) && (l!=0))
+    if ((flag_success == 1) && (l != 0))
     {
-        char* ack_stop=check_which_error(l);
+        char *ack_stop = check_which_error(l);
         printf(MAG);
         printf("Error Message Sent\n");
         printf(RST);
@@ -430,7 +439,7 @@ void *nm_commands(void *arg)
         }
     }
 
-return NULL;
+    return NULL;
 }
 
 void search_directory(const char *dir_path, char *temp_to_store_curr_paths)
